@@ -1,0 +1,7 @@
+.slider_container {
+  cursor: grab;
+}
+
+.slider_container:active {
+  cursor: grabbing;
+}

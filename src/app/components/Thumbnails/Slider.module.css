@@ -1,0 +1,13 @@
+.slider_container {
+  cursor: grab;
+}
+
+.slider_container:active {
+  cursor: grabbing;
+}
+
+@media (max-width: 535px) {
+  .slider_container {
+    height: 108.3vw !important;
+  }
+}

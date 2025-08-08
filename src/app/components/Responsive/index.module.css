@@ -1,0 +1,26 @@
+.image_container {
+  display: flex;
+  position: absolute;
+  left: 0;
+  flex-direction: column;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+  user-select: none;
+}
+
+.image:active {
+  cursor: grabbing;
+}
+
+.fullscreenImages:active {
+  cursor: grabbing !important;
+}
+
+.imgMargin:active {
+  cursor: grabbing !important;
+}

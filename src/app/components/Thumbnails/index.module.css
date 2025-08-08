@@ -1,0 +1,102 @@
+.container {
+  height: 606px;
+  max-height: 606px;
+}
+
+.columns_container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.thumbnail_container {
+  flex-direction: column;
+  gap: 4px;
+  width: 100px;
+  padding-right: 4px;
+}
+
+.thumbnail_container:active {
+  cursor: grabbing;
+}
+
+.thumbnails {
+  display: block;
+  box-sizing: border-box;
+  max-width: 100px;
+  width: 100%;
+  object-fit: contain;
+  cursor: pointer;
+  transition: border 0.2s cubic-bezier(.4,0,.22,1);
+  user-select: none;
+}
+
+.thumbnails:active {
+  cursor: grabbing;
+}
+
+.right_column_container {
+  display: flex;
+}
+
+.right_column {
+  display: block;
+  position: relative;
+  width: 400px;
+  overflow: hidden
+}
+
+.image_container {
+  display: block;
+  position: absolute;
+  left: 0;
+  max-width: 400px;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+  user-select: none;
+}
+
+.image:active {
+  cursor: grabbing;
+}
+
+.fullscreenImages:active {
+  cursor: grabbing !important;
+}
+
+.imgMargin:active {
+  cursor: grabbing !important;
+}
+
+@media (max-width: 535px) {
+  .container {
+    height: 100%;
+    max-height: 753px;
+  }
+
+  .columns_container {
+    flex-direction: column-reverse;
+  }
+
+  .right_column_container {
+    width: 100dvw;
+  }
+
+  .right_column {
+    width: 100dvw;
+  }
+
+  .thumbnail_container {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .image_container {
+    width: calc(100% / 1.4);
+  }
+}

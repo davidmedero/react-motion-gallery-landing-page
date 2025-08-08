@@ -1,0 +1,14 @@
+.slider_container {
+  cursor: grab;
+  margin-top: 20px;
+}
+
+.slider_container:active {
+  cursor: grabbing;
+}
+
+@media (max-width: 600px) {
+  .slider_container {
+    height: 15vw !important;
+  }
+}
