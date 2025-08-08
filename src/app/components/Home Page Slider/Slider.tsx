@@ -1126,6 +1126,7 @@ const Slider = ({
 
     dup.src           = origImg.src;
     dup.style.display = 'block';
+    dup.style.position = 'fixed';
     dup.style.left    = `${imgRect.left}px`;
     dup.style.top     = `${imgRect.top}px`;
     dup.style.width   = `${imgRect.width}px`;

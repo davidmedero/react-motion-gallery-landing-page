@@ -3,12 +3,9 @@
 body {
   margin: 0;
   padding: 0;
-  width: 100dvw;
-  max-height: 100dvh;
   overflow-y: auto;
-  /* overscroll-behavior: none;
-  position: fixed;
-  overflow: hidden; */
+  overscroll-behavior-y: auto;
+  position: static;
 }
 
 @media(max-width: 535px) {
