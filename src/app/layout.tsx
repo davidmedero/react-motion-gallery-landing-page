@@ -29,12 +29,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className={styles.page} id='page_container'>
+        {/* <div className={styles.page} id='page_container'> */}
           <OverlayProvider>
             <Nav />
             <main>{children}</main>
           </OverlayProvider>
-        </div>
+        {/* </div> */}
       </body>
     </html>
   );
