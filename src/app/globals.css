@@ -8,6 +8,10 @@ body {
   position: static;
 }
 
+.sliderContainer {
+  overflow-x: hidden;
+}
+
 @media(max-width: 535px) {
   .simplebar-scrollable-y {
     width: 100% !important;

@@ -115,6 +115,26 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
 
     return totalWidth;
   }
+
+  const scrollLock = { y: 0, applied: false };
+
+  function unlockBodyScroll() {
+    if (!scrollLock.applied) return;
+    const y = scrollLock.y;
+
+    const body = document.body;
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.overflow = '';
+    body.style.paddingRight = '';
+    body.style.touchAction = '';
+
+    scrollLock.applied = false;
+    window.scrollTo(0, y); // restore position
+  }
   
   function proceedToClose(e: MouseEvent) {
     if (!open) return null;
@@ -380,6 +400,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
   
       if (overlayDivRef.current) overlayDivRef.current.remove();
       onClose();
+      unlockBodyScroll();
       setShowFullscreenSlider(false);
       scaleStore.setScale(1);
       zoomedImg.style.height = "100%";

@@ -1037,10 +1037,36 @@ const Slider = ({
     };
   }, []);
 
+  const scrollLock = { y: 0, applied: false };
+
+  function lockBodyScroll() {
+    if (scrollLock.applied) return;
+    scrollLock.y = window.scrollY || window.pageYOffset;
+
+    const body = document.body;
+    const sbw = window.innerWidth - document.documentElement.clientWidth; // scrollbar width
+
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollLock.y}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    // avoid layout shift when scrollbar disappears (desktop)
+    if (sbw > 0) body.style.paddingRight = `${sbw}px`;
+
+    // optional: stop touch scrolling on iOS
+    body.style.touchAction = 'none';
+
+    scrollLock.applied = true;
+  }
+
   function toggleFullscreen(e: React.PointerEvent<HTMLDivElement>, imgRef: RefObject<HTMLImageElement | null>, index: number) {
     const origImg   = imgRef.current;
     const container = sliderContainer.current;
     if (!origImg || !container) return;
+
+    lockBodyScroll();
 
     const imgRect = origImg.getBoundingClientRect();
 

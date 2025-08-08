@@ -930,24 +930,8 @@ export default function SliderWrapper({ urls, showFullscreenSlider, setShowFulls
 
     if (!currentImage.current) return;
 
-    // const imageWidth = imageRef.current.children[0].clientWidth;
-    // const imageHeight = imageRef.current.children[0].clientWidth / aspectRatioRef.current;
     const imageWidth = currentImage.current.children[0].clientWidth;
     const imageHeight = currentImage.current.children[0].clientWidth / aspectRatioRef.current;
-
-    // const imgEl =
-    //   imageRef.current instanceof HTMLImageElement
-    //     ? imageRef.current
-    //     : (imageRef.current as HTMLElement)?.querySelector('img') as HTMLImageElement | null;
-
-    // if (!imgEl) return;
-
-    // const { height: renderedH } = imgEl.getBoundingClientRect();
-
-    // const ar = aspectRatioRef.current ?? (imgEl.naturalWidth / imgEl.naturalHeight);
-
-    // const imageHeight = renderedH;
-    // const imageWidth  = renderedH * ar; 
 
     const distanceFromLeftBound = Math.max(0, dragStartPositionX.current - (zoomX.current * zoomOffset.current) + (windowSize.width - imageWidth) / 2);
 
