@@ -2,7 +2,7 @@ export const dynamic    = 'force-static';
 export const fetchCache = 'force-cache';
 
 import GroupedCellsSlider from "../components/Grouped Cells";
-import styles from "../page.module.css";
+import styles from "./page.module.css";
 import ThumbnailSlider from "../components/Thumbnails";
 import ResponsiveSlider from "../components/Responsive";
 import HeroSlider from "../components/Hero/index";

@@ -7,8 +7,9 @@
 }
 
 @media (max-width: 600px) {
-  .slider_container {
-    height: 15vw !important;
+  .slider_container,
+  .fade_container {
+    height: calc(15vw + 20px) !important;
   }
 }
 

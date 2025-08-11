@@ -7,7 +7,8 @@
 }
 
 @media (max-width: 535px) {
-  .slider_container {
+  .slider_container,
+  .fade_container {
     height: 108.3vw !important;
   }
 }

@@ -1,0 +1,86 @@
+.sliderContainer {
+  overflow-x: hidden;
+}
+
+.title {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  text-align: center;
+  margin-bottom: 0.5rem;
+  margin-top: 2rem;
+  background-image: linear-gradient(
+    to right,
+    #a78bfa 0%,
+    #f472b6 50%,
+    #22d3ee 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1em;
+  padding: 0 32px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 1.125rem;
+  max-width: 980px;
+  padding: 0 32px;
+  margin: 20px auto 3rem auto;
+  opacity: 0.85;
+  line-height: 1.5;
+  color: #0A0A0A;
+}
+
+.headers {
+  font-size: 1.75rem;
+  margin-bottom: 0;
+  position: relative;
+  display: inline-block;
+  color: rgb(80, 163, 255);
+  padding: 0 32px;
+  font-weight: 600;
+}
+
+.headers:not(:first-of-type) {
+  margin-top: 5rem;
+}
+
+.description {
+  font-size: 1rem;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
+  opacity: 0.9;
+  padding: 0 32px;
+  color: #0A0A0A;
+}
+
+@media (max-width: 1024px) {
+  .title { 
+    padding: 0 24px;
+  }
+  .subtitle { 
+    padding: 0 24px;
+  }
+  .headers {
+    padding: 0 24px;
+  }
+  .description {
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .title { 
+   padding: 0 16px;
+  }
+  .subtitle { 
+    padding: 0 16px;
+    font-size: 1rem; 
+  }
+  .headers { 
+    font-size: 1.5rem; 
+    padding: 0 16px;
+  }
+  .description {
+    padding: 0 16px;
+  }
+}

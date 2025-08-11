@@ -8,7 +8,7 @@
 }
 
 @media (max-width: 600px) {
-  .image
+  .image,
   .videoShell {
     height: 15vw !important;
   }

@@ -24,7 +24,7 @@
   display: block;
   box-sizing: border-box;
   max-width: 100px;
-  width: 100%;
+  width: 100dvw;
   object-fit: contain;
   cursor: pointer;
   transition: border 0.2s cubic-bezier(.4,0,.22,1);

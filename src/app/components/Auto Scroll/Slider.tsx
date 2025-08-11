@@ -1110,7 +1110,9 @@ const Slider = ({
     <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? '156px' : '120px', zIndex: 1 }}>
       {/* Shimmer covers everything until ready */}
       {!isReady && <div className={styles.shimmerOverlay} aria-hidden />}
-      <div className={isReady && inView ? styles.fadeInActive : styles.fadeInStart} style={{ position: 'relative',  height: imageCount > 2 ? '156px' : '120px' }}>
+      <div className={`${styles.fade_container} ${
+        isReady && inView ? styles.fadeInActive : styles.fadeInStart
+      }`} style={{ position: 'relative',  height: imageCount > 2 ? '156px' : '120px' }}>
         {/* Previous Button */}
         <div
           ref={prevButtonRef}
