@@ -5,6 +5,7 @@
 import { useRef, useEffect, ReactNode, Children, RefObject, useCallback, useImperativeHandle, forwardRef } from "react";
 import fullscreenSlideStore from './fullscreenSlideStore';
 import type { APITypes } from "plyr-react";
+import { useOverlay } from "@/app/contexts/OverlayContext";
 
 interface FullscreenSliderProps {
   children: ReactNode;
@@ -94,6 +95,12 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
   const prevTimeRef = useRef(0);
   const FPS = 60;
   const MS_PER_FRAME = 1000 / FPS;
+
+  const { registerOverlay, unregisterOverlay } = useOverlay();
+    useEffect(() => {
+      const id = registerOverlay();
+      return () => unregisterOverlay(id);
+    }, [registerOverlay, unregisterOverlay]);
 
   useEffect(() => {  
     const childrenArray = Children.toArray(children);

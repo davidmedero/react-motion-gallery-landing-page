@@ -1,7 +1,10 @@
+'use client';
+
 import Hero from "./components/Hero";
 import GroupedCellsSlider from "./components/Home Page Slider";
 import Pricing from "./components/Pricing";
 import Contact from "./components/Contact";
+import { useEffect } from "react";
 
 export type MediaItem =
   | { kind: 'image'; src: string; alt?: string }
@@ -17,6 +20,21 @@ const heroItems: MediaItem[] = [
   ];
 
 export default function Home() {
+  useEffect(() => {
+    const id = sessionStorage.getItem("__scrollTo");
+    if (!id) return;
+
+    sessionStorage.removeItem("__scrollTo");
+    const tryScroll = () => {
+      const el = document.getElementById(id);
+      setTimeout(() => {
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        else requestAnimationFrame(tryScroll);
+      }, 300)
+      
+    };
+    requestAnimationFrame(tryScroll);
+  }, []);
   
   return (
     <>

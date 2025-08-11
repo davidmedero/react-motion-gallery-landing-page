@@ -6,6 +6,11 @@
   cursor: grabbing;
 }
 
+.slider_container :global(img),
+.slider_container :global(video) {
+  max-width: none !important;
+}
+
 @media (max-width: 535px) {
   .slider_container,
   .fade_container {

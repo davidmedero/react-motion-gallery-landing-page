@@ -6,16 +6,13 @@ body {
   overflow-y: auto;
   overscroll-behavior-y: auto;
   position: static;
+  overscroll-behavior-x: none;
 }
 
 /* Force a grabbing cursor anywhere while dragging */
 body.rmg-dragging, body.rmg-dragging * {
   cursor: grabbing !important;
   cursor: -webkit-grabbing !important; /* Safari */
-}
-
-.sliderContainer {
-  overflow-x: hidden;
 }
 
 @media(max-width: 535px) {

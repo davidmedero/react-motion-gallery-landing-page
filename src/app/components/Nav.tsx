@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Menu, Transition } from '@headlessui/react';
-import { Fragment, useId } from 'react';
+import { Menu, MenuItems, MenuItem, MenuButton, Transition } from '@headlessui/react';
+import { Fragment, useId, useRef } from 'react';
 import { useOverlay } from '../contexts/OverlayContext';
+import MobileMenu from './MobileMenu';
+import { usePathname, useRouter } from 'next/navigation';
 
 function LogoSVG({
   className = '',
@@ -99,7 +101,52 @@ function LogoSVG({
 
 export default function Nav() {
   const { hasOverlay } = useOverlay();
+  const router = useRouter();
+  const pathname = usePathname();
+  const getAccessRef = useRef<HTMLButtonElement | null>(null);
+  const demosRef = useRef(null);
+  const guidesRef = useRef(null);
 
+  function scrollToPricing() {
+    if (pathname === "/") {
+      // wait a tick so the menu has closed/layout settled
+      requestAnimationFrame(() => {
+        const el = document.getElementById("pricing");
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } else {
+      // Navigate home first, then scroll on the next page load
+      sessionStorage.setItem("__scrollTo", "pricing");
+      router.push("/"); // don't auto-jump to top
+    }
+  };
+
+  function createRipple(container: HTMLElement) {
+    // remove old ripple
+    const old = container.querySelector<HTMLElement>('.ripple');
+    if (old) old.remove();
+
+    const rect = container.getBoundingClientRect();
+    // diameter that covers the circle
+    const diameter = Math.max(rect.width, rect.height);
+    const radius   = diameter / 2;
+
+    // center of the container
+    const x = (rect.width  / 2) - radius;
+    const y = (rect.height / 2) - radius;
+
+    const span = document.createElement('span');
+    span.className = 'ripple';
+    span.style.width  = `${diameter}px`;
+    span.style.height = `${diameter}px`;
+    span.style.left   = `${x}px`;
+    span.style.top    = `${y}px`;
+
+    container.appendChild(span);
+    span.addEventListener('animationend', () => span.remove());
+  };
+
+  
   return (
     <>
       {/* Mobile-only logo ABOVE the sticky nav (not sticky) */}
@@ -118,7 +165,7 @@ export default function Nav() {
           hasOverlay ? '' : 'bg-white/10 backdrop-blur-md border-b border-white/20'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <Link href="/" className="flex items-center">
               {/* Desktop/tablet logo INSIDE the sticky nav (hidden on ≤379px) */}
@@ -135,68 +182,46 @@ export default function Nav() {
 
             <div className="flex items-center">
               {/* Desktop links */}
-              <div className="hidden md:flex space-x-6">
-                <Link href="#pricing" className="text-[#0A0A0A] hover:text-blue-400 transition">
+              <div className="hidden md:flex">
+                <button 
+                  ref={getAccessRef}
+                  onClick={() => {
+                    const btn = getAccessRef.current;
+                    if (btn) createRipple(btn);
+                    scrollToPricing();
+                  }} 
+                  className="text-[#0A0A0A] hover:text-blue-400 transition cursor-pointer relative p-5 overflow-hidden">
                   Get Access
-                </Link>
-                <Link href="/demos" className="text-[#0A0A0A] hover:text-blue-400 transition">
+                </button>
+                <Link 
+                  ref={demosRef}
+                  onClick={() => {
+                    const btn = demosRef.current;
+                    if (btn) createRipple(btn);
+                  }}
+                  href="/demos"
+                  className="text-[#0A0A0A] hover:text-blue-400 transition relative p-5 overflow-hidden">
                   Demos
                 </Link>
-                <Link href="/guides" className="text-[#0A0A0A] hover:text-blue-400 transition">
+                <Link 
+                  ref={guidesRef}
+                  onClick={() => {
+                    const btn = guidesRef.current;
+                    if (btn) createRipple(btn);
+                  }}
+                  href="/guides"
+                  className="text-[#0A0A0A] hover:text-blue-400 transition relative p-5 overflow-hidden">
                   Guides
                 </Link>
               </div>
 
-              {/* Mobile menu */}
-              <Menu as="div" className="relative md:hidden">
-                <Menu.Button className="p-2 rounded-md text-[#0A0A0A] hover:bg-white/10 focus:outline-none ring-2 ring-white cursor-pointer">
-                  {({ open }) =>
-                    open ? (
-                      <XMarkIcon className="w-6 h-6" aria-hidden="true" />
-                    ) : (
-                      <Bars3Icon className="w-6 h-6" aria-hidden="true" />
-                    )
-                  }
-                </Menu.Button>
-
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-200"
-                  enterFrom="opacity-0 scale-95"
-                  enterTo="opacity-100 scale-100"
-                  leave="transition ease-in duration-150"
-                  leaveFrom="opacity-100 scale-100"
-                  leaveTo="opacity-0 scale-95"
-                >
-                  <Menu.Items
-                    static
-                    className="absolute right-0 mt-2 w-40 bg-[rgba(255,255,255,0.8)] backdrop-blur-md rounded-lg shadow-lg focus:outline-none"
-                    style={{
-                      WebkitBackdropFilter: 'blur(12px)',
-                      backdropFilter: 'blur(12px)',
-                    }}
-                  >
-                    {[
-                      { href: '#pricing', label: 'Get Access' },
-                      { href: '/demos', label: 'Demos' },
-                      { href: '/guides', label: 'Guides' },
-                    ].map(({ href, label }) => (
-                      <Menu.Item key={label}>
-                        {({ active }) => (
-                          <Link
-                            href={href}
-                            className={`block px-4 py-2 text-[#0A0A0A] transition hover:bg-blue-400/10 hover:rounded-lg ${
-                              active ? 'bg-white/30' : ''
-                            }`}
-                          >
-                            {label}
-                          </Link>
-                        )}
-                      </Menu.Item>
-                    ))}
-                  </Menu.Items>
-                </Transition>
-              </Menu>
+              <MobileMenu
+                items={[
+                  { type: "scroll", targetId: "pricing", label: "Get Access" },
+                  { type: "link", href: "/demos",  label: "Demos" },
+                  { type: "link", href: "/guides", label: "Guides" },
+                ]}
+              />
             </div>
           </div>
         </div>

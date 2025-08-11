@@ -85,7 +85,7 @@ export default function Demos() {
   // ];
 
   return (
-    <>
+    <div className="max-w-[1440px] w-full flex flex-col justify-center mx-auto">
       <p className={styles.subtitle}>
         On desktop, resize the browser to toggle wrapping (infinite looping). Tap or click on the image to toggle fullscreen mode. Tap, click or pinch-zoom on the fullscreen image to zoom in and out. On laptops, you can zoom in by 1: holding ctrl and scrolling on the touchpad vertically and 2: pinch-zooming on the touchpad. You can pan an image via mouse, touch, pointer and wheel gestures (use 2 fingers on laptops to scroll with the wheel event). Sliders can be dragged via mouse, touch, pointer and wheel gestures (which are wrapped). In fullscreen mode, you can close the fullscreen modal by swiping the image vertically (if the image is completely zoomed out). Im using the same high res images for both the original and fullscreen sliders in the examples below but it&apos;s recommended to use optimized/low res for the original and high res for fullscreen for best performance. 
       </p>
@@ -160,6 +160,6 @@ export default function Demos() {
         <MediaQuerySlider items={items} />
       </div>
       
-    </>
+    </div>
   );
 }
