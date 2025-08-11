@@ -8,6 +8,12 @@ body {
   position: static;
 }
 
+/* Force a grabbing cursor anywhere while dragging */
+body.rmg-dragging, body.rmg-dragging * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important; /* Safari */
+}
+
 .sliderContainer {
   overflow-x: hidden;
 }
@@ -196,6 +202,7 @@ body::before {
 .pagination-dot {
   width: 14px;
   height: 14px;
+  overflow: hidden;
   border-radius: 50%;
   margin: 5px 5px 5px 5px;
   cursor: pointer;

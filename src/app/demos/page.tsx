@@ -10,30 +10,55 @@ import AutoScroll from "../components/Auto Scroll";
 import Autoplay from "../components/Autoplay";
 import MediaQuerySlider from "../components/Media Query";
 
+export type MediaItem =
+  | { kind: 'image'; src: string; alt?: string }
+  | { kind: 'video'; src: string; alt?: string; thumb?: string };
+
 export default function Demos() {
 
-  const images: string[] = [
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-1.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-2.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-3.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-4.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-5.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-6.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-7.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-8.jpg'
+  // const urls: string[] = [
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-1.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-2.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-3.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-4.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-5.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-6.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-7.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-8.jpg'
+  // ];
+
+  const items: MediaItem[] = [
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-1.jpg", alt: "Image 1" },
+    { kind: "video", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4", thumb: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/beach-video-thumb-portrait.jpg", alt: "Video 1" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-2.jpg", alt: "Image 2" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-3.jpg", alt: "Image 3" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-4.jpg", alt: "Image 4" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-5.jpg", alt: "Image 5" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-6.jpg", alt: "Image 6" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-7.jpg", alt: "Image 7" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-8.jpg", alt: "Image 8" },
   ];
 
-  const heroImages: string[] = [
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-1.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-2.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-3.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-4.jpg',
-    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-5.jpg'
+  // const heroUrls: string[] = [
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-1.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-2.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-3.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-4.jpg',
+  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-5.jpg'
+  // ];
+
+  const heroItems: MediaItem[] = [
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-1.jpg", alt: "Hero image 1" },
+    { kind: "video", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4", thumb: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/beach-video-thumb-landscape.jpg", alt: "Video 1" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-2.jpg", alt: "Hero image 2" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-3.jpg", alt: "Hero image 3" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-4.jpg", alt: "Hero image 4" },
+    { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-5.jpg", alt: "Hero image 5" }
   ];
 
-  const logoImages = [
+  const logoUrls = [
     'https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/google.webp',
     'https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/canva.png',
     'https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/github.png',
@@ -45,6 +70,19 @@ export default function Demos() {
     'https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/spotify.png',
     'https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/stripe.png',
   ];
+
+  // const logoItems: MediaItem[] = [
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/google.webp",    alt: "Google logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/canva.png",     alt: "Canva logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/github.png",    alt: "GitHub logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/adobe.png",     alt: "Adobe logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/hubspot.png",   alt: "HubSpot logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/instagram.svg", alt: "Instagram logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/microsoft.webp",alt: "Microsoft logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/slack.png",     alt: "Slack logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/spotify.png",   alt: "Spotify logo" },
+  //   { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/seamless/stripe.png",    alt: "Stripe logo" },
+  // ];
 
   return (
     <>
@@ -59,7 +97,7 @@ export default function Demos() {
         Resize the browser to 500px to see the horizontal thumbnail scrollbar. One cell is equal to one slide. Every image has to be the same size for best results.
       </p>
       <div className={styles.sliderContainer}>
-        <ThumbnailSlider urls={images} />
+        <ThumbnailSlider items={items} />
       </div>
     
       {/** Grouped Cells Section **/}
@@ -69,7 +107,7 @@ export default function Demos() {
         I gave this slider a height of 300px then change it to 50vw when the viewport is 600px and below. Cells are grouped. Accomodates images of any size. I disable wrapping once the second to last image is visible (you have complete control over when and why wrapping happens). Resize the browser on desktop to see how the number of cells per slide change based on how many cells are visible inside the slider container.
       </p>
       <div className={styles.sliderContainer}>
-        <GroupedCellsSlider urls={heroImages} />
+        <GroupedCellsSlider items={heroItems} />
       </div>
     
       {/** Responsive Section **/}
@@ -79,7 +117,7 @@ export default function Demos() {
         Column-based layout guaranteeing full image visibility per slide. The number of cells per slide is derived from the maxWidth value you assign it which is 220 in the example below. The minimum number of visible slides is set to 2. Every image has to be the same size for best results.
       </p>
       <div className={styles.sliderContainer}>
-        <ResponsiveSlider urls={images} />
+        <ResponsiveSlider items={items} />
       </div>
     
       {/** Hero Section **/}
@@ -89,7 +127,7 @@ export default function Demos() {
         Slides are centered. One cell is equal to one slide. Accomodates images of any size.
       </p>
       <div className={styles.sliderContainer}>
-        <HeroSlider urls={heroImages} />
+        <HeroSlider items={heroItems} />
       </div>
 
       {/** AUto Scroll Section **/}
@@ -99,7 +137,7 @@ export default function Demos() {
         Constant-speed horizontal scroll. Grouped cells. Accomodates images of any size. I removed the fullscreen feature since it doesn&apos;t make sense here. All of the code for the autoplay feature is inside a small useEffect hook which can be copied and pasted inside any custom slider.
       </p>
       <div className={styles.sliderContainer}>
-        <AutoScroll urls={logoImages} />
+        <AutoScroll urls={logoUrls} />
       </div>
 
       {/** Autoplay Section **/}
@@ -109,7 +147,7 @@ export default function Demos() {
         Automatically advance to the next slide every 3 seconds.
       </p>
       <div className={styles.sliderContainer}>
-        <Autoplay urls={images} />
+        <Autoplay items={items} />
       </div>
 
       {/** Media Query Section **/}
@@ -119,7 +157,7 @@ export default function Demos() {
         Full control over how many cells to show per slide.
       </p>
       <div className={styles.sliderContainer}>
-        <MediaQuerySlider urls={images} />
+        <MediaQuerySlider items={items} />
       </div>
       
     </>

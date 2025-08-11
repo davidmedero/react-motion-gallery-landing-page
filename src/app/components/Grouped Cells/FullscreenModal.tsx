@@ -5,6 +5,8 @@ import React, { Dispatch, RefObject, SetStateAction, useEffect, useSyncExternalS
 import scaleStore from './scaleStore';
 import slideStore from './slideStore';
 import fullscreenSlideStore from './fullscreenSlideStore';
+import { unlockBody } from '../../lib/scrollLock';
+import { MediaItem } from "./";
 
 function useSlideIndex() {
   return useSyncExternalStore(
@@ -34,7 +36,7 @@ interface FullscreenModalProps {
   sliderX: RefObject<number>;
   sliderVelocity: RefObject<number>;
   isWrapping: RefObject<boolean>;
-  wrappedImages: string[];
+  wrappedItems: MediaItem[];
 }
 
 const FullscreenModal: React.FC<FullscreenModalProps> = ({
@@ -56,7 +58,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
   sliderX,
   sliderVelocity,
   isWrapping,
-  wrappedImages,
+  wrappedItems,
   children,
 }) => {  
 
@@ -198,9 +200,9 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       }
     }
 
-    const originals = wrappedImages.slice(1, wrappedImages.length - 1);
+    const originals = wrappedItems.slice(1, wrappedItems.length - 1);
     const url = originals[wrapIndex];
-    const isVideoSlide = /\.(mp4|webm|ogg)$/i.test(url);
+    const isVideoSlide = /\.(mp4|webm|ogg)$/i.test(url.src);
 
     if (isVideoSlide) {
       let newIndex = wrapIndex + 1;
@@ -321,8 +323,9 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
         });
       }
     }
-
+    console.log('yup 1')
     if (!targetImg || !overlayDivRef.current || !rect) return;
+    console.log('yup 2')
   
     const zoomedImg = targetImg;
     const zoomedRect = targetImg.getBoundingClientRect();
@@ -379,6 +382,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       };
   
       if (overlayDivRef.current) overlayDivRef.current.remove();
+      unlockBody();
       onClose();
       setShowFullscreenSlider(false);
       scaleStore.setScale(1);

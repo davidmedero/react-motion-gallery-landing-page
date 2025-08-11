@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
@@ -23,11 +24,67 @@ function useSlideIndex() {
   );
 }
 
-interface Props {
-  urls: string[];
+export type MediaItem =
+  | { kind: 'image'; src: string; alt?: string }
+  | { kind: 'video'; src: string; alt?: string; thumb?: string };
+
+function VideoThumbImg({
+  src,
+  alt,
+}: { src: string; alt?: string }) {
+  return (
+    <div className={styles.videoShell}>
+      <img
+        src={src}
+        alt={alt ?? "Video thumbnail"}
+        draggable={false}
+        className={styles.videoImg}
+      />
+      <svg className={styles.playBadge} viewBox="0 0 100 100" aria-hidden>
+        <circle cx="50" cy="50" r="48" fill="rgba(0,0,0,.55)" />
+        <polygon points="42,32 42,68 70,50" fill="#fff" />
+      </svg>
+    </div>
+  );
 }
 
-export default function SliderWrapper({ urls }: Props) {
+function LoadingThumb({
+  showPlay = false,
+  aspect = '2 / 3', // change to '2 / 3' if you prefer tall thumbs
+}: { showPlay?: boolean; aspect?: string }) {
+  return (
+    <div className={styles.loadingShell} style={{ ['--ar' as any]: aspect }}>
+      <div className={styles.loadingFill} />
+      {/* spinner (top-right) */}
+      <span className={styles.loadingSpinner} aria-hidden />
+      {showPlay && (
+        <svg className={styles.playBadge} viewBox="0 0 100 100" aria-hidden>
+          <circle cx="50" cy="50" r="48" fill="rgba(0,0,0,.55)" />
+          <polygon points="42,32 42,68 70,50" fill="#fff" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
+type Props = { items?: MediaItem[]; urls?: string[] };
+
+const toMediaItems = (urls: string[]): MediaItem[] =>
+  urls.map((u) =>
+    /\.(mp4|webm|ogg)$/i.test(u) ? { kind: "video", src: u } : { kind: "image", src: u }
+  );
+
+export default function ResponsiveSlider({ items, urls }: Props) {
+  const normalizedItems = useMemo<MediaItem[]>(
+    () => (items && items.length ? items : urls ? toMediaItems(urls) : []),
+    [items, urls]
+  );
+
+  // thumbnails for videos w/o thumb:
+  const videoSrcsNeedingThumbs = useMemo(
+    () => normalizedItems.filter(i => i.kind === "video" && !i.thumb).map(i => i.src),
+    [normalizedItems]
+  );
   const [slideIndex, setSlideIndex] = useState(0);
   const isClick = useRef(false);
   const isZoomClick = useRef(false);
@@ -65,7 +122,7 @@ export default function SliderWrapper({ urls }: Props) {
   const expandableImgRefs = useRef([]);
   const overlayDivRef = useRef<HTMLDivElement | null>(null);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
-  const [wrappedImages, setWrappedImages] = useState<string[]>([]);
+  const [wrappedItems, setWrappedItems] = useState<MediaItem[]>([]);
   const [windowSize, setWindowSize] = useState({
     width: 0,
     height: 0,
@@ -77,7 +134,7 @@ export default function SliderWrapper({ urls }: Props) {
   );
   const zoomLevel = isZoomed ? 2 : 1;
   const scaleRef = useRef(1);
-  const panRef   = useRef({ x: 0, y: 0 });
+  const panRef  = useRef({ x: 0, y: 0 });
   const previousZoom = useRef({ x: 0, y: 0 });
   const slideIndexSync = useSlideIndex();
   const changingSlides = useRef(false);
@@ -119,60 +176,67 @@ export default function SliderWrapper({ urls }: Props) {
   const startScale = useRef(1);
   const isTouchPinching = useRef(false);
   const cells = useRef<{ element: HTMLElement, index: number }[]>([]);
-  const thumbnails = useVideoThumbnails(urls);
-  const plyrRefs = useRef<(APITypes | null)[]>(wrappedImages.map(() => null));
-  const plyrRef = useRef<(APITypes | null)[]>(urls.map(() => null));
+  // thumbnails only for videos that didn't supply a thumb
+  const thumbnails = useVideoThumbnails(videoSrcsNeedingThumbs);
 
-  function isVideoUrl(url: string) {
-    return /\.(mp4|webm|ogg)$/i.test(url);
-  };
+  // Refs for Plyr players (init empty, we fill by index as we render)
+  const plyrRefs = useRef<(APITypes | null)[]>([]);
+  const plyrRef = useRef<(APITypes | null)[]>([]);
 
+  const isVideoItem = (m: MediaItem) => m.kind === "video";
+
+  // Plyr props for wrapped items
   const plyrPropsList = useMemo(() => {
-    return wrappedImages.map((url) => {
-      if (!isVideoUrl(url)) {
-        return null;
-      }
+    return wrappedItems.map((item) => {
+      if (!isVideoItem(item)) return null;
       return {
         source: {
           type: "video",
-          sources: [{ src: url, type: "video/mp4" }],
+          sources: [{ src: item.src, type: "video/mp4" }],
         } as Plyr.SourceInfo,
         options: {
-          controls: [
-            "play-large",
-            "play",
-            "progress",
-            "current-time",
-            "volume",
-            "fullscreen",
-          ],
+          controls: ["play-large","play","progress","current-time","volume","fullscreen"],
           ratio: "16:9",
         } as Plyr.Options,
       };
     });
-  }, [wrappedImages]);
+  }, [wrappedItems]);
 
-  const wrappedFullscreenImages = wrappedImages.map((url, index) => {
+  // One-per-item Plyr props (non-wrapped)
+  const plyrProp = useMemo(() => {
+    return normalizedItems.map((item) => {
+      if (!isVideoItem(item)) return null;
+      return {
+        source: {
+          type: "video",
+          sources: [{ src: item.src, type: "video/mp4" }],
+        } as Plyr.SourceInfo,
+        options: {
+          controls: ["play-large","play","progress","current-time","volume","fullscreen"],
+          ratio: "16:9",
+        } as Plyr.Options,
+      };
+    });
+  }, [normalizedItems]);
+
+  // Wrapped fullscreen slides — now driven by wrappedItems but still
+  // provide data-index etc. like before.
+  const wrappedFullscreenImages = wrappedItems.map((item, index) => {
     const imageRef = imageRefs.current[index];
-
-    const length = wrappedImages.length;
+    const length = wrappedItems.length;
     const originalCount = length - 2;
-    let transformStyle = '';
 
-    if (index === 0) {
-      transformStyle = `translateX(-100%)`;
-    } else if (index === length - 1) {
-      transformStyle = `translateX(${originalCount * 100}%)`;
-    } else {
-      transformStyle = `translateX(${(index - 1) * 100}%)`;
-    }
+    let transformStyle = '';
+    if (index === 0) transformStyle = `translateX(-100%)`;
+    else if (index === length - 1) transformStyle = `translateX(${originalCount * 100}%)`;
+    else transformStyle = `translateX(${(index - 1) * 100}%)`;
 
     const plyrProps = plyrPropsList[index];
-    const isVideo   = plyrProps !== null;
+    const isVideo   = !!plyrProps;
 
     return (
-      <div 
-        key={index}
+      <div
+        key={`${item.src}-${index}`}
         ref={(el: HTMLImageElement | null) => {
           if (el && !cells.current.some(c => c.element === el)) {
             cells.current.push({ element: el, index });
@@ -191,10 +255,10 @@ export default function SliderWrapper({ urls }: Props) {
         }}
         className={styles.imgMargin}
       >
-        <div 
+        <div
           ref={imageRef}
           onPointerDown={(e) => handlePanPointerStart(e, imageRef)}
-          style={{ 
+          style={{
             overflow: 'visible',
             touchAction: "none",
             height: '100dvh',
@@ -203,87 +267,56 @@ export default function SliderWrapper({ urls }: Props) {
             justifyContent: "center",
           }}
         >
-          {
-            isVideo ? (
-              <div data-index={index} className="myPlayer">
-                <Plyr
-                  source={plyrProps!.source}
-                  options={plyrProps!.options}
-                  ref={(player: APITypes | null) => {
-                    plyrRefs.current[index] = player;
-                  }}
-                />
-              </div>
-          ) : (
-              <img
-                data-index={index}
-                className={styles.fullscreenImages}
-                src={`${url}`}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: "contain",
-                  touchAction: 'manipulation',
-                  transformOrigin: '0 0',
-                  transform: `translate(0, 0) scale(1)`,
-                  cursor: isZoomed ? 'grab' : 'zoom-in',
-                  userSelect: 'none'
-                }}
-                alt={`cell-${index}`}
-                draggable='false'
+          {isVideo ? (
+            // If you want to *show* the video in fullscreen, keep Plyr
+            // If you prefer a still in fullscreen until play, you could use <img src={videoThumb} />
+            <div data-index={index} className="myPlayer">
+              <Plyr
+                source={plyrProps!.source}
+                options={plyrProps!.options}
+                ref={(player: APITypes | null) => { plyrRefs.current[index] = player; }}
               />
-            )
-          }
+            </div>
+          ) : (
+            <img
+              data-index={index}
+              className={styles.fullscreenImages}
+              src={item.src}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: "contain",
+                touchAction: 'manipulation',
+                transformOrigin: '0 0',
+                transform: `translate(0, 0) scale(1)`,
+                cursor: isZoomed ? 'grab' : 'zoom-in',
+                userSelect: 'none'
+              }}
+              alt={item.alt ?? `cell-${index}`}
+              draggable='false'
+            />
+          )}
         </div>
       </div>
     )
   });
 
-  const plyrProp = useMemo(() => {
-    return urls.map((url) => {
-      if (!isVideoUrl(url)) {
-        return null;
-      }
-      return {
-        source: {
-          type: "video",
-          sources: [{ src: url, type: "video/mp4" }],
-        } as Plyr.SourceInfo,
-        options: {
-          controls: [
-            "play-large",
-            "play",
-            "progress",
-            "current-time",
-            "volume",
-            "fullscreen",
-          ],
-          ratio: "16:9",
-        } as Plyr.Options,
-      };
-    });
-  }, [urls]);
-
-  const oneFullscreenImage = urls.map((url, index) => {
+  // Non-wrapped single fullscreen image
+  const oneFullscreenImage = normalizedItems.map((item, index) => {
     const imageRef = imageRefs.current[index];
-
-    let transformStyle = '';
-
-    transformStyle = `translateX(0%)`;
-
     const plyr = plyrProp[index];
-    const isVideo = plyr !== null;
+    const isVideo = !!plyr;
 
     return (
-      <div 
-        key={index}
+      <div
+        key={`${item.src}-${index}`}
         ref={(el: HTMLImageElement | null) => {
           if (el && !cells.current.some(c => c.element === el)) {
             cells.current.push({ element: el, index });
           }
         }}
         style={{
-          transform: transformStyle,
+          transform: 'translateX(0%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -295,10 +328,10 @@ export default function SliderWrapper({ urls }: Props) {
         }}
         className={styles.imgMargin}
       >
-        <div 
+        <div
           ref={imageRef}
           onPointerDown={(e) => handlePanPointerStart(e, imageRef)}
-          style={{ 
+          style={{
             overflow: 'visible',
             touchAction: "none",
             height: '100dvh',
@@ -307,51 +340,45 @@ export default function SliderWrapper({ urls }: Props) {
             justifyContent: "center",
           }}
         >
-          {
-            isVideo ? (
-              <div data-index={index} className="myPlayer">
-                <Plyr
-                  source={plyr!.source}
-                  options={plyr!.options}
-                  ref={(player: APITypes | null) => {
-                    plyrRef.current[index] = player;
-                  }}
-                />
-              </div>
-          ) : (
-              <img
-                data-index={index}
-                className={styles.fullscreenImages}
-                src={`${url}`}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: "contain",
-                  touchAction: 'manipulation',
-                  transformOrigin: '0 0',
-                  transform: `translate(0, 0) scale(1)`,
-                  cursor: isZoomed ? 'grab' : 'zoom-in',
-                  userSelect: 'none'
-                }}
-                alt={`cell-${index}`}
-                draggable='false'
+          {isVideo ? (
+            <div data-index={index} className="myPlayer">
+              <Plyr
+                source={plyr!.source}
+                options={plyr!.options}
+                ref={(player: APITypes | null) => { plyrRef.current[index] = player; }}
               />
-            )
-          }
+            </div>
+          ) : (
+            <img
+              data-index={index}
+              className={styles.fullscreenImages}
+              src={item.src}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: "contain",
+                touchAction: 'manipulation',
+                transformOrigin: '0 0',
+                transform: `translate(0, 0) scale(1)`,
+                cursor: isZoomed ? 'grab' : 'zoom-in',
+                userSelect: 'none'
+              }}
+              alt={item.alt ?? `cell-${index}`}
+              draggable='false'
+            />
+          )}
         </div>
       </div>
     )
   });
 
+  // ---------------- existing effects/handlers (unchanged logic) ----------------
   useEffect(() => {
     if (scaleRef.current === 1) return;
     changingSlides.current = true;
     scaleStore.setScale(1);
-    zoomX.current = 0;
-    zoomY.current = 0;
-    scaleRef.current = 1;
-    previousZoom.current.x = 0;
-    previousZoom.current.y = 0;
+    zoomX.current = 0; zoomY.current = 0; scaleRef.current = 1;
+    previousZoom.current.x = 0; previousZoom.current.y = 0;
     panRef.current = { x: 0, y: 0 }
 
     const commonStyles = {
@@ -362,82 +389,52 @@ export default function SliderWrapper({ urls }: Props) {
     imageRefs.current.forEach(ref => {
       const element = ref.current!;
       const child = element.children[0] as HTMLElement | undefined;
-    
-      // 1) Read your transition string and extract the duration
       const match = commonStyles.transition.match(/([\d.]+)s/);
       const durationMs = match ? parseFloat(match[1]) * 1000 : 300;
-    
-      // 2) Apply the transition to both element & child up front
+
       element.style.transition = commonStyles.transition;
-      if (child) {
-        child.style.transition = commonStyles.transition;
-      }
-    
-      // 3) Force a reflow so the browser knows we're *starting* from the old state
-      //    (necessary if you’re re-using the same element repeatedly)
-      // tslint:disable-next-line:no-unused-expression
+      if (child) child.style.transition = commonStyles.transition;
+
+      // force reflow
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       element.offsetWidth;
-    
-      // 4) Kick off the transforms
+
       element.style.transform = commonStyles.transform;
-      if (child) {
-        child.style.transform = commonStyles.transform;
-      }
-    
-      // 5) Schedule the clean-up on a timer rather than waiting for transitionend
+      if (child) child.style.transform = commonStyles.transform;
+
       setTimeout(() => {
         element.style.transition = '';
-        if (child) {
-          child.style.transition = '';
-        }
-      }, durationMs + 50);  // a tiny buffer to ensure it’s finished
+        if (child) child.style.transition = '';
+      }, durationMs + 50);
     });
 
-    x.current = 0;
-    y.current = 0;
-
-    setTimeout(() => {
-      changingSlides.current = false;
-    }, 200);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    x.current = 0; y.current = 0;
+    setTimeout(() => { changingSlides.current = false; }, 200);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slideIndexSync]);
 
+  // wrap items & keep legacy wrappedImages (string[]) for other components
   useEffect(() => {
-    if (!urls.length) return;
-  
-    const firstSlide = urls[0];
-    const lastSlide = urls[urls.length - 1];
-  
-    const newSlides = [lastSlide, ...urls, firstSlide];
-  
-    setWrappedImages((prev) => 
-      JSON.stringify(prev) !== JSON.stringify(newSlides) ? newSlides : prev
-    );
-  }, [urls]);
-  
-  useEffect(() => {
-    if (!wrappedImages.length) return;
-  
-    imageRefs.current = wrappedImages.map(() => createRef());
-  
-    wrappedImages.forEach(url => {
-      const img = new Image();
-      img.src = url;
-    });
-  
-  }, [wrappedImages]);
+    if (!normalizedItems.length) return;
+
+    const first = normalizedItems[0];
+    const last  = normalizedItems[normalizedItems.length - 1];
+
+    const wi = [last, ...normalizedItems, first];
+    setWrappedItems(wi);
+  }, [normalizedItems]);
 
   useEffect(() => {
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-    window.addEventListener("resize", handleResize);
-    handleResize();
-    return () => window.removeEventListener("resize", handleResize);
+    if (!wrappedItems.length) return;
+    imageRefs.current = wrappedItems.map(() => createRef());
+    wrappedItems.forEach(item => { const img = new Image(); img.src = item.src; });
+  }, [wrappedItems]);
+
+  useEffect(() => {
+    const onResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    onResize();
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   function getImageAspectRatio(image: HTMLDivElement | null) {
@@ -920,8 +917,7 @@ export default function SliderWrapper({ urls }: Props) {
     return Math.round(position) + 'px';
   };
 
-  function handlePanPointerMove(e: PointerEvent | TouchEvent | React.PointerEvent<HTMLImageElement> | React.TouchEvent<HTMLImageElement>,
-    imageRef: React.RefObject<HTMLImageElement | null>) {
+  function handlePanPointerMove(e: PointerEvent | TouchEvent | React.PointerEvent<HTMLImageElement> | React.TouchEvent<HTMLImageElement>) {
     e.preventDefault();
     if (!isZoomed) return;
     if (!isPointerDown.current) return;
@@ -947,10 +943,10 @@ export default function SliderWrapper({ urls }: Props) {
     dragX.current = dragStartPositionX.current + moveX;
     dragY.current = dragStartPositionY.current + moveY;
 
-    if (!imageRef.current) return;
+    if (!currentImage.current) return;
 
-    const imageWidth = imageRef.current.children[0].clientWidth;
-    const imageHeight = imageRef.current.children[0].clientWidth / aspectRatioRef.current;
+    const imageWidth = currentImage.current.children[0].clientWidth;
+    const imageHeight = currentImage.current.children[0].clientWidth / aspectRatioRef.current;
 
     const distanceFromLeftBound = Math.max(0, dragStartPositionX.current - (zoomX.current * zoomOffset.current) + (windowSize.width - imageWidth) / 2);
 
@@ -1241,7 +1237,7 @@ export default function SliderWrapper({ urls }: Props) {
     const sliderElement = imageRefs.current[slideIndex]?.current;
     if (!sliderElement) return;
   
-    const pointerMoveHandler = (e: PointerEvent | TouchEvent) => handlePanPointerMove(e, imageRefs.current[slideIndex]);
+    const pointerMoveHandler = (e: PointerEvent | TouchEvent) => handlePanPointerMove(e);
     const pointerUpHandler = (e: PointerEvent) => handlePanPointerUp(e as unknown as React.PointerEvent<HTMLImageElement>);
 
     window.addEventListener('pointermove', pointerMoveHandler);
@@ -1578,46 +1574,51 @@ export default function SliderWrapper({ urls }: Props) {
   return (
     <>
       <div className={styles.container}>
-        <Slider imageCount={urls.length} isClick={isClick} expandableImgRefs={expandableImgRefs} overlayDivRef={overlayDivRef} setSlideIndex={setSlideIndex} setShowFullscreenModal={setShowFullscreenModal} setShowFullscreenSlider={setShowFullscreenSlider} showFullscreenSlider={showFullscreenSlider} isWrapping={isWrapping} slides={slides} slider={slider} visibleImagesRef={visibleImagesRef} selectedIndex={selectedIndex} firstCellInSlide={firstCellInSlide} sliderX={sliderX} sliderVelocity={sliderVelocity}>
-          {urls.map((url, i) => {
-            const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
-            if (isVideo) {
-              const thumb = thumbnails[url];
-              return thumb ? (
+        <Slider imageCount={normalizedItems.length} isClick={isClick} expandableImgRefs={expandableImgRefs} overlayDivRef={overlayDivRef} setSlideIndex={setSlideIndex} setShowFullscreenModal={setShowFullscreenModal} setShowFullscreenSlider={setShowFullscreenSlider} showFullscreenSlider={showFullscreenSlider} isWrapping={isWrapping} slides={slides} slider={slider} visibleImagesRef={visibleImagesRef} selectedIndex={selectedIndex} firstCellInSlide={firstCellInSlide} sliderX={sliderX} sliderVelocity={sliderVelocity}>
+          {normalizedItems.map((item, i) => {
+            if (item.kind === "video") {
+              const thumbSrc = item.thumb ?? thumbnails[item.src];
+              return thumbSrc ? (
                 <div
                   key={i}
                   className={styles.image_container}
                   style={{ width: `${100 / imagesPerSlide.current}%` }}
                 >
-                  <img
-                    key={i}
-                    src={thumb}
-                    className={styles.image}
-                    alt={`video thumb ${i}`}
-                    draggable={false}
-                  />   
+                  <VideoThumbImg
+                    key={`${item.src}-cell`}
+                    src={thumbSrc}
+                    alt={item.alt ?? `video thumb ${i}`}
+                  />
                 </div>
               ) : (
-                <div key={i} className={styles.thumbPlaceholder}>
-                  Loading…
-                </div>
-              );
-            } else {
-              return (
                 <div
                   key={i}
                   className={styles.image_container}
                   style={{ width: `${100 / imagesPerSlide.current}%` }}
                 >
+                  <LoadingThumb
+                    key={`${item.src}-loading`}
+                    showPlay
+                  />
+                </div>
+                
+              );
+            }
+            return (
+              <div
+                  key={i}
+                  className={styles.image_container}
+                  style={{ width: `${100 / imagesPerSlide.current}%` }}
+                >
                   <img
-                    src={url}
+                    key={`${item.src}-cell`}
+                    src={item.src}
                     className={styles.image}
-                    alt={`cell-${i}`}
+                    alt={item.alt ?? `cell-${i}`}
                     draggable="false"
                   />
                 </div>
-              );
-            }
+            );
           })}
         </Slider>
       </div>
@@ -1631,7 +1632,7 @@ export default function SliderWrapper({ urls }: Props) {
         zoomLevel={zoomLevel}
         cells={cells}
         setShowFullscreenSlider={setShowFullscreenSlider}
-        imageCount={urls.length}
+        imageCount={normalizedItems.length}
         slides={slides}
         slider={slider}
         visibleImagesRef={visibleImagesRef}
@@ -1640,11 +1641,11 @@ export default function SliderWrapper({ urls }: Props) {
         sliderX={sliderX} 
         sliderVelocity={sliderVelocity}
         isWrapping={isWrapping}
-        wrappedImages={wrappedImages}
+        wrappedItems={wrappedItems}
       >
         <FullscreenSlider 
           ref={sliderApi}
-          imageCount={urls.length} 
+          imageCount={normalizedItems.length} 
           slideIndex={slideIndex} 
           isClick={isZoomClick} 
           isZoomed={isZoomed} 
@@ -1663,7 +1664,7 @@ export default function SliderWrapper({ urls }: Props) {
           plyrRefs={plyrRefs}
           plyrRef={plyrRef}
         >
-          {urls.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
+          {normalizedItems.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
         </FullscreenSlider>
       </FullscreenModal>
     </>

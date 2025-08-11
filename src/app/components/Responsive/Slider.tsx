@@ -4,6 +4,7 @@
 import { useRef, useEffect, ReactNode, cloneElement, Children, useState, createRef, Dispatch, SetStateAction, ReactElement, HTMLAttributes, ClassAttributes, RefObject, useLayoutEffect, isValidElement } from "react";
 import styles from './Slider.module.css';
 import slideStore from './slideStore';
+import { lockBody } from '../../lib/scrollLock';
 
 // function useSlideIndex() {
 //   return useSyncExternalStore(
@@ -114,6 +115,9 @@ const Slider = ({
   const prevButtonRef = useRef<HTMLDivElement>(null);
   const nextButtonRef = useRef<HTMLDivElement>(null);
   // const dotRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [isMeasured, setIsMeasured]   = useState(false);   // widths positioned
+  const [isReady, setIsReady]         = useState(false);   // fully ready to show
+  const [inView, setInView]           = useState(false);   // IO has fired
 
   useLayoutEffect(() => {
     if (!slider.current || cells.current.length === 0 || hasPositioned.current || sliderWidth.current === 0 || !slides.current || !slides.current[0].cells[0]?.element) return;
@@ -266,6 +270,10 @@ const Slider = ({
       const allEls = Array.from(containerEl.children) as HTMLElement[];
       const originals = allEls.slice(clonesBefore, allEls.length - clonesAfter);
 
+      const idxMap = new Map<HTMLElement, number>(
+        originals.map((el, i) => [el, i])
+      );
+
       // map to { el, left, right }
       const data = originals.map(el => {
         const r = el.getBoundingClientRect();
@@ -306,13 +314,12 @@ const Slider = ({
         i = j;
       }
 
-      // commit
       const newSlides = pages.map(page => ({
         target: page.target,
-        cells:  page.els.map(el => {
-          const c = cells.current.find(c => c.element === el)!;
-          return { element: el, index: c?.index };
-        })
+        cells: page.els.map(el => ({
+          element: el,
+          index: idxMap.get(el)!
+        }))
       }));
 
       // trigger RAF‑retry if slides came out broken
@@ -348,14 +355,49 @@ const Slider = ({
     }
     
     sliderWidth.current = totalWidth;
+    setIsMeasured(true);
 
   }, [clonedChildren, visibleImages, isWrapping.current]);
+
+  useEffect(() => {
+    const ready =
+      firstChildWidth &&
+      clonedChildren.length > 0 &&
+      slidesState.length > 0 &&
+      isMeasured;
+
+    if (ready) setIsReady(true);
+  }, [firstChildWidth, clonedChildren.length, slidesState.length, isMeasured]);
+
+  useEffect(() => {
+    if (!isReady || !sliderContainer.current) return;
+    const el = sliderContainer.current;
+
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        io.disconnect();
+        setTimeout(() => {
+          sliderX.current = 0;
+          setTranslateX(0);
+        }, 0)
+        
+      }
+    }, { threshold: 0.2 });
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isReady]);
 
   interface PointerEvent extends MouseEvent {
     touches?: Array<{
       clientX: number
       clientY: number
     }>
+  }
+
+  function setDraggingCursor(on: boolean) {
+    document.body.classList.toggle('rmg-dragging', on);
   }
 
   function handlePointerStart(e: PointerEvent) {
@@ -379,6 +421,8 @@ const Slider = ({
     isClick.current = true;
     isScrolling.current = false;
     isPointerDown.current = true;
+
+    setDraggingCursor(true);
 
     const translateX = slider.current ? getCurrentXFromTransform(slider.current) : 0;
 
@@ -613,7 +657,19 @@ const Slider = ({
     select(index);
 
     isDragSelect.current = false;
+
+    setDraggingCursor(false);
   };
+
+  useEffect(() => {
+    const clear = () => setDraggingCursor(false);
+    window.addEventListener('pointercancel', clear);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('pointercancel', clear);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
 
   function dragEndBoostSelect() {
     const movedAt = dragMoveTime.current;
@@ -904,6 +960,8 @@ const Slider = ({
     const container = sliderContainer.current;
     if (!origImg || !container) return;
 
+    lockBody();
+
     const imgRect = origImg.getBoundingClientRect();
 
     // 2) Create all the nodes
@@ -988,6 +1046,7 @@ const Slider = ({
 
     dup.src           = origImg.src;
     dup.style.display = 'block';
+    dup.style.position = 'fixed';
     dup.style.left    = `${imgRect.left}px`;
     dup.style.top     = `${imgRect.top}px`;
     dup.style.width   = `${imgRect.width}px`;
@@ -1127,94 +1186,134 @@ const Slider = ({
       sliderContainerRef.removeEventListener('touchmove',  onTouchMove)
     }
   }, []);
+
+  function createRipple(container: HTMLElement) {
+    // remove old ripple
+    const old = container.querySelector<HTMLElement>('.ripple');
+    if (old) old.remove();
+
+    const rect = container.getBoundingClientRect();
+    // diameter that covers the circle
+    const diameter = Math.max(rect.width, rect.height);
+    const radius   = diameter / 2;
+
+    // center of the container
+    const x = (rect.width  / 2) - radius;
+    const y = (rect.height / 2) - radius;
+
+    const span = document.createElement('span');
+    span.className = 'ripple';
+    span.style.width  = `${diameter}px`;
+    span.style.height = `${diameter}px`;
+    span.style.left   = `${x}px`;
+    span.style.top    = `${y}px`;
+
+    container.appendChild(span);
+    span.addEventListener('animationend', () => span.remove());
+  }
   
 
   return (
-    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? `${sliderHeight + 6}px` : `${sliderHeight}px`, backgroundColor: '#f8f9fa', zIndex: 1 }}>
-    {/* Previous Button */}
-    <div
-      onClick={() => previous()}
-      ref={prevButtonRef}
-      style={{
-        position: "absolute",
-        display:
-          imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
-            ? "flex"
-            : "none",
-        left: 10,
-        top: "50%",
-        transform: "translateY(-50%)",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-        borderRadius: "100%",
-        zIndex: 2,
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Arrow direction="prev" size={32} />
-    </div>
-
-    <div
-      onClick={() => next()}
-      ref={nextButtonRef}
-      style={{
-        position: "absolute",
-        display:
-          imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
-            ? "flex"
-            : "none",
-        right: 10,
-        top: "50%",
-        transform: "translateY(-50%)",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-        borderRadius: "100%",
-        zIndex: 2,
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Arrow direction="next" size={32} />
-    </div>
-      {/* Slider */}
-      <div 
-        ref={slider}
-        style={{ 
-          width: '100%'
-        }}
-      >
-        {clonedChildren}
-      </div>
-      {/* progress track */}
-      <div
-        style={{
-          position: 'absolute',
-          display: imageCount > 2 ? 'block' : 'none',
-          bottom: 0,
-          left: 0,
-          width: '100%',
-          height: '6px',
-          backgroundColor: 'rgba(230, 230, 230, 1)',
-        }}
-      >
-        {/* progress fill */}
-        <span
-          ref={progressFillRef}
-          style={{
-            display: 'block',
-            height: '100%',
-            width: '0%',
-            backgroundColor: 'rgb(80, 163, 255)',
-            transition: 'width 0.2s ease-out',
+    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? `${(sliderHeight === 0 ? 375 : sliderHeight) + 6}px` : `${(sliderHeight === 0 ? 375 : sliderHeight)}px`, backgroundColor: '#f8f9fa', zIndex: 1 }}>
+      {/* Shimmer covers everything until ready */}
+      {!isReady && <div className={styles.shimmerOverlay} aria-hidden />}
+      <div className={isReady && inView ? styles.fadeInActive : styles.fadeInStart} style={{ position: 'relative', height: imageCount > 2 ? `${(sliderHeight === 0 ? 375 : sliderHeight) + 6}px` : `${(sliderHeight === 0 ? 375 : sliderHeight)}px` }}>
+        {/* Previous Button */}
+        <div
+          ref={prevButtonRef}
+          onClick={() => {
+            const btn = prevButtonRef.current;
+            if (btn) createRipple(btn);
+            previous();
           }}
-        />
+          style={{
+            position: "absolute",
+            overflow: "hidden",
+            display:
+              imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
+                ? "flex"
+                : "none",
+            left: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            backgroundColor: "rgba(255, 255, 255, 0.75)",
+            boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+            borderRadius: "100%",
+            zIndex: 2,
+            width: 36,
+            height: 36,
+            justifyContent: "center",
+            alignItems: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Arrow direction="prev" size={32} />
+        </div>
+
+        <div
+          ref={nextButtonRef}
+          onClick={() => {
+            const btn = nextButtonRef.current;
+            if (btn) createRipple(btn);
+            next();
+          }}
+          style={{
+            position: "absolute",
+            overflow: "hidden",
+            display:
+              imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
+                ? "flex"
+                : "none",
+            right: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            backgroundColor: "rgba(255, 255, 255, 0.75)",
+            boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+            borderRadius: "100%",
+            zIndex: 2,
+            width: 36,
+            height: 36,
+            justifyContent: "center",
+            alignItems: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Arrow direction="next" size={32} />
+        </div>
+        {/* Slider */}
+        <div 
+          ref={slider}
+          style={{ 
+            width: '100%'
+          }}
+        >
+          {clonedChildren}
+        </div>
+        {/* progress track */}
+        <div
+          style={{
+            position: 'absolute',
+            display: imageCount > 2 ? 'block' : 'none',
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            height: '6px',
+            backgroundColor: 'rgba(230, 230, 230, 1)',
+          }}
+        >
+          {/* progress fill */}
+          <span
+            ref={progressFillRef}
+            style={{
+              display: 'block',
+              height: '100%',
+              width: '0%',
+              backgroundColor: 'rgb(80, 163, 255)',
+              boxShadow: '0 0 8px rgba(80, 163, 255, 0.6)',
+              transition: 'width 0.2s ease-out',
+            }}
+          />
+        </div>
       </div>
     </div>
   );

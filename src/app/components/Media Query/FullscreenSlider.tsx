@@ -75,6 +75,8 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
   const dragThreshold = 5;
   const velocityX = useRef(0);
   const velocityY = useRef(0);
+  const lastForceX = useRef(0);
+  const lastForceY = useRef(0);
   const isAnimating = useRef(false);
   const restingFrames = useRef(0);
   const selectedIndex = useRef(0);
@@ -90,15 +92,15 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
   const VERT_ANGLE_MAX = 120;
   const isVerticalScroll = useRef(false);
   const isClosing = useRef(false);
-  const prevTimeRef    = useRef(0);
-  const FPS            = 60;
-  const MS_PER_FRAME   = 1000 / FPS;
+  const prevTimeRef = useRef(0);
+  const FPS = 60;
+  const MS_PER_FRAME = 1000 / FPS;
 
   const { registerOverlay, unregisterOverlay } = useOverlay();
-    useEffect(() => {
-      const id = registerOverlay();
-      return () => unregisterOverlay(id);
-    }, [registerOverlay, unregisterOverlay]);
+  useEffect(() => {
+    const id = registerOverlay();
+    return () => unregisterOverlay(id);
+  }, [registerOverlay, unregisterOverlay]);
 
   useEffect(() => {  
     const childrenArray = Children.toArray(children);
@@ -288,6 +290,9 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
     const dragForceX = dragVelocityX - velocityX.current;
     const dragForceY = dragVelocityY - velocityY.current;
 
+    lastForceX.current = dragForceX;
+    lastForceY.current = dragForceY;
+
     applyForce(dragForceX, dragForceY);
   };
 
@@ -311,7 +316,7 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
   function positionSlider() {
     let currentPositionX = x.current;
     const currentPositionY = y.current;
-    if (!isClick.current && imageCount > 1 && zoomedDuringWrap.current !== true) {
+    if (!isClick.current && imageCount > 1 && !zoomedDuringWrap.current) {
       currentPositionX = ((currentPositionX % sliderWidth.current) + sliderWidth.current) % sliderWidth.current;
       currentPositionX += -sliderWidth.current;
     }
@@ -362,6 +367,20 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
     e.preventDefault();
     if (isZoomed) return;
     if (!isPointerDown.current) return;
+
+    let actualIndex = selectedIndex.current + 1;
+    const length = slides.current.length;
+    actualIndex = ((actualIndex % length) + length) % length;
+    if (actualIndex === 0) actualIndex = imageCount;
+
+    setTimeout(() => {
+      plyrRefs.current[actualIndex]?.plyr.pause();
+    }, 0);
+    if (imageCount === 1) {
+      setTimeout(() => {
+        plyrRef.current[0]?.plyr.pause();
+      }, 0);
+    }
     
     previousDragX.current = dragX.current;
     previousDragY.current = dragY.current;
@@ -416,22 +435,23 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
     if (!isPointerDown.current) return;
     isPointerDown.current = false;
 
+    let index = dragEndRestingSelect();
+
     if (isVerticalScroll.current) {
       const deltaY = Math.abs(previousDragY.current);
       const speedThreshold = 0.1;
       const distanceThreshold = windowSize.height * 0.3;
-      if (Math.abs(velocityY.current) > speedThreshold || deltaY > distanceThreshold) {
+      if (Math.abs(lastForceY.current) > speedThreshold || deltaY > distanceThreshold) {
         const closeButton = document.querySelector(
           '.close-button'
         ) as HTMLElement | null;
         if (!slider.current) return;
         isClosing.current = true;
+        console.log('here')
         closeButton?.click();
         return;
       }
     };
-
-    let index = dragEndRestingSelect();
 
     if (isClick.current) {
 
@@ -487,7 +507,7 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
           }, 0);
         }
       }
-      if (index === selectedIndex.current || (index === slides.current.length && selectedIndex.current !== slides.current.length - 1)) {
+      if (!isClosing.current && index === selectedIndex.current || (index === slides.current.length && selectedIndex.current !== slides.current.length - 1)) {
         index += dragEndBoostSelect();
       }
     }
@@ -587,6 +607,18 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
     isPinching.current = false;
     isTouchPinching.current = false;
     zoomedDuringWrap.current = false;
+    let actualIndex = selectedIndex.current + 1;
+    const length = slides.current.length;
+    actualIndex = ((actualIndex % length) + length) % length;
+    if (actualIndex === 0) actualIndex = imageCount;
+    setTimeout(() => {
+      plyrRefs.current[actualIndex]?.plyr.pause();
+    }, 0);
+    if (imageCount === 1) {
+      setTimeout(() => {
+        plyrRef.current[0]?.plyr.pause();
+      }, 0);
+    }
     select(selectedIndex.current - 1);
   }
   
@@ -596,6 +628,18 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
     isPinching.current = false;
     isTouchPinching.current = false;
     zoomedDuringWrap.current = false;
+    let actualIndex = selectedIndex.current + 1;
+    const length = slides.current.length;
+    actualIndex = ((actualIndex % length) + length) % length;
+    if (actualIndex === 0) actualIndex = imageCount;
+    setTimeout(() => {
+      plyrRefs.current[actualIndex]?.plyr.pause();
+    }, 0);
+    if (imageCount === 1) {
+      setTimeout(() => {
+        plyrRef.current[0]?.plyr.pause();
+      }, 0);
+    }
     select(selectedIndex.current + 1);
   }  
 
@@ -749,7 +793,7 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
 
     const index = Math.round(Math.abs(currentPosition) / slider.current.clientWidth);
     selectedIndex.current = index;
-    
+
     fullscreenSlideStore.setSlideIndex(index);
     let actualIndex = index + 1;
     actualIndex = ((actualIndex % imageCount) + imageCount) % imageCount;
@@ -761,6 +805,14 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
 
     x.current = currentPosition;
     const wrapIndex = ((index % imageCount) + imageCount) % imageCount;
+    setTimeout(() => {
+      plyrRefs.current[actualIndex]?.plyr.pause();
+    }, 0);
+    if (imageCount === 1) {
+      setTimeout(() => {
+        plyrRef.current[0]?.plyr.pause();
+      }, 0);
+    }
     firstCellInSlide.current = slides.current[wrapIndex].cells[0]?.element;
   };
 

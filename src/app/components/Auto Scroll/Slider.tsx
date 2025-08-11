@@ -97,6 +97,9 @@ const Slider = ({
   const prevTimeRef = useRef(0);
   const FPS = 60;
   const MS_PER_FRAME = 1000 / FPS;
+  const [isMeasured, setIsMeasured]   = useState(false);   // widths positioned
+  const [isReady, setIsReady]         = useState(false);   // fully ready to show
+  const [inView, setInView]           = useState(false);   // IO has fired
 
   useEffect(() => {
     const container = slider.current;
@@ -352,9 +355,41 @@ const Slider = ({
 
     requestAnimationFrame(measureAndPosition);
 
+    setIsMeasured(true);
+
     return () => { canceled = true; };
 
   }, [clonedChildren, visibleImages]);
+
+  useEffect(() => {
+    const ready =
+      allImagesLoaded &&
+      clonedChildren.length > 0 &&
+      slidesState.length > 0 &&
+      isMeasured;
+
+    if (ready) setIsReady(true);
+  }, [allImagesLoaded, clonedChildren.length, slidesState.length, isMeasured]);
+
+  useEffect(() => {
+    if (!isReady || !sliderContainer.current) return;
+    const el = sliderContainer.current;
+
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        io.disconnect();
+        setTimeout(() => {
+          sliderX.current = 0;
+          setTranslateX(0);
+        }, 0)
+        
+      }
+    }, { threshold: 0.2 });
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isReady]);
 
   useEffect(() => {
     const containerEl = slider.current;
@@ -377,6 +412,10 @@ const Slider = ({
       // slice out just the originals
       const allEls = Array.from(containerEl.children) as HTMLElement[];
       const originals = allEls.slice(clonesBefore, allEls.length - clonesAfter);
+
+      const idxMap = new Map<HTMLElement, number>(
+        originals.map((el, i) => [el, i])
+      );
 
       // map to { el, left, right }
       const data = originals.map(el => {
@@ -418,13 +457,12 @@ const Slider = ({
         i = j;
       }
 
-      // commit
       const newSlides = pages.map(page => ({
         target: page.target,
-        cells:  page.els.map(el => {
-          const c = cells.current.find(c => c.element === el)!;
-          return { element: el, index: c?.index };
-        })
+        cells: page.els.map(el => ({
+          element: el,
+          index: idxMap.get(el)!
+        }))
       }));
 
       // trigger RAF‑retry if slides came out broken
@@ -451,6 +489,10 @@ const Slider = ({
     }>
   }
 
+  function setDraggingCursor(on: boolean) {
+    document.body.classList.toggle('rmg-dragging', on);
+  }
+
   function handlePointerStart(e: PointerEvent) {
     if (!slider.current) return;
     const hit = (e.target as Node);
@@ -471,6 +513,8 @@ const Slider = ({
     isClick.current = true;
     isScrolling.current = false;
     isPointerDown.current = true;
+
+    setDraggingCursor(true);
 
     const translateX = slider.current ? getCurrentXFromTransform(slider.current) : 0;
 
@@ -714,6 +758,8 @@ const Slider = ({
     select(index);
 
     isDragSelect.current = false;
+
+    setDraggingCursor(false);
   };
 
   function dragEndBoostSelect() {
@@ -1033,94 +1079,134 @@ const Slider = ({
       sliderContainerRef.removeEventListener('touchmove',  onTouchMove)
     }
   }, []);
+
+  function createRipple(container: HTMLElement) {
+    // remove old ripple
+    const old = container.querySelector<HTMLElement>('.ripple');
+    if (old) old.remove();
+
+    const rect = container.getBoundingClientRect();
+    // diameter that covers the circle
+    const diameter = Math.max(rect.width, rect.height);
+    const radius   = diameter / 2;
+
+    // center of the container
+    const x = (rect.width  / 2) - radius;
+    const y = (rect.height / 2) - radius;
+
+    const span = document.createElement('span');
+    span.className = 'ripple';
+    span.style.width  = `${diameter}px`;
+    span.style.height = `${diameter}px`;
+    span.style.left   = `${x}px`;
+    span.style.top    = `${y}px`;
+
+    container.appendChild(span);
+    span.addEventListener('animationend', () => span.remove());
+  }
   
 
   return (
-    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? '146px' : '120px', zIndex: 1 }}>
-    {/* Previous Button */}
-    <div
-      onClick={() => previous()}
-      ref={prevButtonRef}
-      style={{
-        position: "absolute",
-        display:
-          imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
-            ? "flex"
-            : "none",
-        left: 10,
-        top: "50%",
-        transform: "translateY(-50%)",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-        borderRadius: "100%",
-        zIndex: 2,
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Arrow direction="prev" size={32} />
-    </div>
-
-    <div
-      onClick={() => next()}
-      ref={nextButtonRef}
-      style={{
-        position: "absolute",
-        display:
-          imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
-            ? "flex"
-            : "none",
-        right: 10,
-        top: "50%",
-        transform: "translateY(-50%)",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-        borderRadius: "100%",
-        zIndex: 2,
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Arrow direction="next" size={32} />
-    </div>
-      {/* Slider */}
-      <div 
-        ref={slider}
-        style={{ 
-          width: '100%',
-        }}
-      >
-        {clonedChildren}
-      </div>
-      {/* progress track */}
-      <div
-        style={{
-          position: 'absolute',
-          display: imageCount > 2 ? 'block' : 'none',
-          bottom: 0,
-          left: 0,
-          width: '100%',
-          height: '6px',
-          backgroundColor: 'rgba(230, 230, 230, 1)',
-        }}
-      >
-        {/* progress fill */}
-        <span
-          ref={progressFillRef}
-          style={{
-            display: 'block',
-            height: '100%',
-            width: '0%',
-            backgroundColor: 'rgb(80, 163, 255)',
-            transition: 'width 0.2s ease-out',
+    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? '156px' : '120px', zIndex: 1 }}>
+      {/* Shimmer covers everything until ready */}
+      {!isReady && <div className={styles.shimmerOverlay} aria-hidden />}
+      <div className={isReady && inView ? styles.fadeInActive : styles.fadeInStart} style={{ position: 'relative',  height: imageCount > 2 ? '156px' : '120px' }}>
+        {/* Previous Button */}
+        <div
+          ref={prevButtonRef}
+          onClick={() => {
+            const btn = prevButtonRef.current;
+            if (btn) createRipple(btn);
+            previous();
           }}
-        />
+          style={{
+            position: "absolute",
+            overflow: "hidden",
+            display:
+              imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
+                ? "flex"
+                : "none",
+            left: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            backgroundColor: "rgba(255, 255, 255, 0.75)",
+            boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+            borderRadius: "100%",
+            zIndex: 2,
+            width: 36,
+            height: 36,
+            justifyContent: "center",
+            alignItems: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Arrow direction="prev" size={32} />
+        </div>
+
+        <div
+          ref={nextButtonRef}
+          onClick={() => {
+            const btn = nextButtonRef.current;
+            if (btn) createRipple(btn);
+            next();
+          }}
+          style={{
+            position: "absolute",
+            overflow: "hidden",
+            display:
+              imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
+                ? "flex"
+                : "none",
+            right: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            backgroundColor: "rgba(255, 255, 255, 0.75)",
+            boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+            borderRadius: "100%",
+            zIndex: 2,
+            width: 36,
+            height: 36,
+            justifyContent: "center",
+            alignItems: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Arrow direction="next" size={32} />
+        </div>
+        {/* Slider */}
+        <div 
+          ref={slider}
+          style={{ 
+            width: '100%',
+          }}
+        >
+          {clonedChildren}
+        </div>
+        {/* progress track */}
+        <div
+          style={{
+            position: 'absolute',
+            display: imageCount > 2 ? 'block' : 'none',
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            height: '6px',
+            backgroundColor: 'rgba(230, 230, 230, 1)',
+          }}
+        >
+          {/* progress fill */}
+          <span
+            ref={progressFillRef}
+            style={{
+              display: 'block',
+              height: '100%',
+              width: '0%',
+              backgroundColor: 'rgb(80, 163, 255)',
+              boxShadow: '0 0 8px rgba(80, 163, 255, 0.6)',
+              transition: 'width 0.2s ease-out',
+            }}
+          />
+        </div>
       </div>
     </div>
   );

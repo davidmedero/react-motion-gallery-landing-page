@@ -2,6 +2,19 @@ import { useState, useEffect } from "react";
 
 type ThumbMap = Record<string, string>;
 
+// helper: append a random param safely
+function withCacheBust(u: string) {
+  try {
+    const url = new URL(u);
+    url.searchParams.set('__thumb', `${Date.now()}${Math.random().toString(36).slice(2,8)}`);
+    return url.toString();
+  } catch {
+    // in case it's not a fully-qualified URL
+    const sep = u.includes('?') ? '&' : '?';
+    return `${u}${sep}__thumb=${Date.now()}${Math.random().toString(36).slice(2,8)}`;
+  }
+}
+
 export function useVideoThumbnails(urls: string[]): ThumbMap {
   const [thumbs, setThumbs] = useState<ThumbMap>({});
 
@@ -21,7 +34,7 @@ export function useVideoThumbnails(urls: string[]): ThumbMap {
       video.preload        = "metadata";
       video.playsInline    = true;  
       video.muted          = true;  
-      video.src            = url;
+      video.src = withCacheBust(url);
       videos.push(video);
       document.body.appendChild(video);
 
@@ -33,23 +46,6 @@ export function useVideoThumbnails(urls: string[]): ThumbMap {
           canvas.height = video.videoHeight;
           const ctx = canvas.getContext("2d")!;
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-          // overlay play-icon
-          const cx     = canvas.width / 2;
-          const cy     = canvas.height / 2;
-          const radius= Math.min(canvas.width, canvas.height) * 0.15;
-          ctx.fillStyle = "rgba(0,0,0,0.6)";
-          ctx.beginPath();
-          ctx.arc(cx, cy, radius, 0, 2*Math.PI);
-          ctx.fill();
-          ctx.fillStyle = "white";
-          const size = radius * 0.6;
-          ctx.beginPath();
-          ctx.moveTo(cx - size*0.5, cy - size);
-          ctx.lineTo(cx - size*0.5, cy + size);
-          ctx.lineTo(cx + size,        cy);
-          ctx.closePath();
-          ctx.fill();
 
           const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
           setThumbs((prev) => ({ ...prev, [url]: dataUrl }));

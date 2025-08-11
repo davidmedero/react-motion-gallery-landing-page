@@ -99,7 +99,6 @@ const Slider = ({
   const attraction = 0.025;
   const cells = useRef<{ element: HTMLElement, index: number }[]>([]);
   const isDragSelect = useRef<boolean>(false);
-  // const lastTranslateX = useRef<number>(0);
   const progressFillRef = useRef<HTMLDivElement>(null);
   const isClosing = useRef(false);
   const slideIndexSync = useSlideIndex();
@@ -113,6 +112,10 @@ const Slider = ({
   const prevButtonRef = useRef<HTMLDivElement>(null);
   const nextButtonRef = useRef<HTMLDivElement>(null);
   const dotRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const dotsContainerRef = useRef<HTMLDivElement | null>(null);
+  const [isMeasured, setIsMeasured]   = useState(false);   // widths positioned
+  const [isReady, setIsReady]         = useState(false);   // fully ready to show
+  const [inView, setInView]           = useState(false);   // IO has fired
 
   useEffect(() => {
     const container = slider.current;
@@ -322,9 +325,41 @@ const Slider = ({
 
     requestAnimationFrame(measureAndPosition);
 
+    setIsMeasured(true);
+
     return () => { canceled = true; };
 
   }, [clonedChildren, visibleImages]);
+
+  useEffect(() => {
+    const ready =
+      allImagesLoaded &&
+      clonedChildren.length > 0 &&
+      slidesState.length > 0 &&
+      isMeasured;
+
+    if (ready) setIsReady(true);
+  }, [allImagesLoaded, clonedChildren.length, slidesState.length, isMeasured]);
+
+  useEffect(() => {
+    if (!isReady || !sliderContainer.current) return;
+    const el = sliderContainer.current;
+
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        io.disconnect();
+        setTimeout(() => {
+          sliderX.current = 0;
+          setTranslateX(0);
+        }, 0)
+        
+      }
+    }, { threshold: 0.2 });
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isReady]);
 
   useEffect(() => {
     const containerEl = slider.current;
@@ -347,6 +382,10 @@ const Slider = ({
       // slice out just the originals
       const allEls = Array.from(containerEl.children) as HTMLElement[];
       const originals = allEls.slice(clonesBefore, allEls.length - clonesAfter);
+
+      const idxMap = new Map<HTMLElement, number>(
+        originals.map((el, i) => [el, i])
+      );
 
       // map to { el, left, right }
       const data = originals.map(el => {
@@ -388,13 +427,12 @@ const Slider = ({
         i = j;
       }
 
-      // commit
       const newSlides = pages.map(page => ({
         target: page.target,
-        cells:  page.els.map(el => {
-          const c = cells.current.find(c => c.element === el)!;
-          return { element: el, index: c?.index };
-        })
+        cells: page.els.map(el => ({
+          element: el,
+          index: idxMap.get(el)!
+        }))
       }));
 
       // trigger RAF‑retry if slides came out broken
@@ -462,6 +500,10 @@ const Slider = ({
     }>
   }
 
+  function setDraggingCursor(on: boolean) {
+    document.body.classList.toggle('rmg-dragging', on);
+  }
+
   function handlePointerStart(e: PointerEvent) {
     if (!slider.current) return;
 
@@ -480,9 +522,15 @@ const Slider = ({
       return;
     }
 
+    if (dotsContainerRef.current?.contains(hit)) {
+      return;
+    }
+
     isClick.current = true;
     isScrolling.current = false;
     isPointerDown.current = true;
+
+    setDraggingCursor(true);
 
     const translateX = slider.current ? getCurrentXFromTransform(slider.current) : 0;
 
@@ -700,21 +748,6 @@ const Slider = ({
     if (!slider.current || !isPointerDown.current) return;
     isPointerDown.current = false;
 
-    // const hit = (e.target as Node);
-
-    // if (prevButtonRef.current?.contains(hit)) {
-    //   return;
-    // }
-
-    // if (nextButtonRef.current?.contains(hit)) {
-    //   return;
-    // }
-
-    // const dotIndex = dotRefs.current.findIndex(dot => dot?.contains(hit));
-    // if (dotIndex >= 0) {
-    //   return;
-    // }
-    
     if (sliderWidth.current <= slider.current.clientWidth) {
       select(0);
     }
@@ -766,7 +799,18 @@ const Slider = ({
     isDragSelect.current = true;
     select(index);
     isDragSelect.current = false;
+    setDraggingCursor(false);
   }
+
+  useEffect(() => {
+    const clear = () => setDraggingCursor(false);
+    window.addEventListener('pointercancel', clear);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('pointercancel', clear);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
 
   function dragEndBoostSelect() {
     const movedAt = dragMoveTime.current;
@@ -859,8 +903,6 @@ const Slider = ({
   };
 
   function next() {
-    if (!slider.current) return;
-    
     isScrolling.current = false;
     select(selectedIndex.current + 1);
   };
@@ -898,7 +940,7 @@ const Slider = ({
             : sliderX.current;
 
         setTranslateX(currentPosition);
-      } 
+      }
     }
 
     const observer = new ResizeObserver(handleResize);
@@ -1208,7 +1250,7 @@ const Slider = ({
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      fill="black"
+      fill="#000"
       xmlns="http://www.w3.org/2000/svg"
     >
       {direction === "prev" ? (
@@ -1276,117 +1318,120 @@ const Slider = ({
     container.appendChild(span);
     span.addEventListener('animationend', () => span.remove());
   }
-
+  
 
   return (
-    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? '306px' : '300px', backgroundColor: '#f8f9fa', zIndex: 1 }}>
-    {/* Previous Button */}
-    <div
-      ref={prevButtonRef}
-      onClick={(e) => {
-        const btn = prevButtonRef.current;
-        if (btn) createRipple(btn);
-        previous();
-      }}
-      style={{
-        position: "absolute",
-        overflow: "hidden",
-        display:
-          imageCount > 1 &&
-          slider.current &&
-          sliderWidth.current > slider.current.clientWidth
-            ? "flex"
-            : "none",
-        left: 10,
-        top: "50%",
-        transform: "translateY(-50%)",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-        borderRadius: "100%",
-        zIndex: 2,
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Arrow direction="prev" size={32} />
-    </div>
-
-    <div
-      ref={nextButtonRef}
-      onClick={() => {
-        const btn = nextButtonRef.current;
-        if (btn) createRipple(btn);
-        next();
-      }}
-      style={{
-        position: "absolute",
-        overflow: "hidden",
-        display:
-          imageCount > 1 &&
-          slider.current &&
-          sliderWidth.current > slider.current.clientWidth
-            ? "flex"
-            : "none",
-        right: 10,
-        top: "50%",
-        transform: "translateY(-50%)",
-        backgroundColor: "rgba(255, 255, 255, 0.75)",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-        borderRadius: "100%",
-        zIndex: 2,
-        width: 36,
-        height: 36,
-        justifyContent: "center",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Arrow direction="next" size={32} />
-    </div>
-      {/* Slider */}
-      <div 
-        ref={slider}
-        style={{ 
-          width: '100%',
-        }}
-      >
-        {clonedChildren}
-      </div>
-      {/* Pagination Dots */}
+    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: imageCount > 2 ? '306px' :'300px', backgroundColor: '#f8f9fa', zIndex: 1 }}>
+      {/* Shimmer covers everything until ready */}
+      {!isReady && <div className={styles.shimmerOverlay} aria-hidden />}
+      <div className={isReady && inView ? styles.fadeInActive : styles.fadeInStart} style={{ position: 'relative', height: imageCount > 2 ? '306px' :'300px' }}>
+        {/* Previous Button */}
       <div
+        ref={prevButtonRef}
+        onClick={() => {
+          const btn = prevButtonRef.current;
+          if (btn) createRipple(btn);
+          previous();
+        }}
         style={{
-          display: slider.current && sliderWidth.current <= slider.current.clientWidth ? "none" : "flex",
-          justifyContent: "center",
           position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          bottom: 20,
-          zIndex: 10,
-          background: "rgba(0, 0, 0, 0.5)",     // dark half-opaque
-          backdropFilter: "blur(8px)",          // soften whatever’s behind
-          padding: "4px 8px",
-          borderRadius: "9999px",
+          overflow: "hidden",
+          display:
+            imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
+              ? "flex"
+              : "none",
+          left: 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          backgroundColor: "rgba(255, 255, 255, 0.75)",
+          boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+          borderRadius: "100%",
+          zIndex: 2,
+          width: 36,
+          height: 36,
+          justifyContent: "center",
+          alignItems: "center",
+          cursor: "pointer",
         }}
       >
-        {slidesState.map((_, index) => {
-          const isActive = slideIndexSync === index;
-          return (
-            <div
-              key={index}
-              ref={(el) => {
-                dotRefs.current[index] = el;
-              }}
-              onClick={() => {
-                isScrolling.current = false;
-                select(index);
-              }}
-              className={`pagination-dot ${isActive ? "active" : "inactive"}`}
-            />
-          );
-        })}
+        <Arrow direction="prev" size={32} />
+      </div>
+
+      <div
+        ref={nextButtonRef}
+        onClick={() => {
+          const btn = nextButtonRef.current;
+          if (btn) createRipple(btn);
+          next();
+        }}
+        style={{
+          position: "absolute",
+          overflow: "hidden",
+          display:
+            imageCount > 1 && slider.current && sliderWidth.current > slider.current.clientWidth
+              ? "flex"
+              : "none",
+          right: 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          backgroundColor: "rgba(255, 255, 255, 0.75)",
+          boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+          borderRadius: "100%",
+          zIndex: 2,
+          width: 36,
+          height: 36,
+          justifyContent: "center",
+          alignItems: "center",
+          cursor: "pointer",
+        }}
+      >
+        <Arrow direction="next" size={32} />
+      </div>
+        {/* Slider */}
+        <div 
+          ref={slider}
+          style={{ 
+            width: '100%'
+          }}
+        >
+          {clonedChildren}
+        </div>
+        {/* Pagination Dots */}
+        <div
+          ref={dotsContainerRef}
+          style={{
+            display: slider.current && sliderWidth.current <= slider.current.clientWidth ? "none" : "flex",
+            justifyContent: "center",
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            bottom: 16,
+            zIndex: 10,
+            background: "rgba(0, 0, 0, 0.5)",
+            padding: "4px 8px",
+            borderRadius: "9999px",
+            cursor: 'auto'
+          }}
+        >
+          {slidesState.map((_, index) => {
+            const isActive = slideIndexSync === index;
+            return (
+              <div
+                key={index}
+                ref={(el) => {
+                  dotRefs.current[index] = el;
+                }}
+                onClick={() => {
+                  const btn = dotRefs.current[index];
+                  if (btn) createRipple(btn);
+                  isScrolling.current = false;
+                  select(index);
+                }}
+                className={`pagination-dot ${isActive ? "active" : "inactive"}`}
+              />
+            );
+          })}
+        </div>
       </div>
       {/* progress track */}
       <div

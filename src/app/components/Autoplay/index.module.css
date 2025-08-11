@@ -8,14 +8,16 @@
   height: 300px;
 }
 
-@media (max-width: 600px) {
-  .image {
-    height: 50vw !important;
-  }
+.image_container {
+  position: relative;
+  display: flex;
 }
 
-.image:active {
-  cursor: grabbing;
+@media (max-width: 600px) {
+  .image,
+  .videoShell {
+    height: 50vw !important;
+  }
 }
 
 .fullscreenImages:active {
@@ -24,4 +26,94 @@
 
 .imgMargin:active {
   cursor: grabbing !important;
+}
+
+.videoShell {
+  position: absolute;
+  left: 0;
+  height: 300px;
+  display: inline-block;
+  user-select: none;
+  cursor: zoom-in;
+}
+
+.videoImg {
+  display: block;
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Play badge centered over the thumb */
+.playBadge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30%;
+  height: 30%;
+  transform: translate(-50%, -50%);
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.loadingShell {
+  position: absolute;
+  left: 0;
+  height: 300px;            /* match .image */
+  aspect-ratio: 16 / 9;  /* e.g. 3 / 2 or 2 / 3 */
+  display: inline-block;    /* shrink-to-fit */
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: zoom-in;
+  user-select: none;
+}
+
+/* shimmer */
+.loadingFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    rgba(0,0,0,.06) 8%,
+    rgba(0,0,0,.12) 18%,
+    rgba(0,0,0,.06) 33%
+  );
+  background-size: 200% 100%;
+  animation: thumbShimmer 1.2s linear infinite;
+}
+
+@keyframes thumbShimmer {
+  to { background-position-x: -200%; }
+}
+
+/* lightweight shimmer (GPU-friendly) */
+.loadingShimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, #e9eef4 20%, #f6f8fb 40%, #e9eef4 60%);
+  background-size: 200% 100%;
+  animation: thumb-shine 1.1s ease-in-out infinite;
+}
+@keyframes thumb-shine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* tiny spinner (no filters) */
+.loadingSpinner {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,.16);
+  border-top-color: rgba(0,0,0,.45);
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingShimmer { animation: none; }
+  .loadingSpinner { animation: none; }
 }
