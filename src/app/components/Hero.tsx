@@ -1,41 +1,41 @@
 'use client';
 
-import { useCallback, useRef } from "react";
+// import { useCallback, useRef } from "react";
 
 export default function Hero() {
-  const accessButtonRef = useRef<HTMLButtonElement | null>(null);
-  const accessMaskRef = useRef<HTMLButtonElement | null>(null);
+  // const accessButtonRef = useRef<HTMLButtonElement | null>(null);
+  // const accessMaskRef = useRef<HTMLButtonElement | null>(null);
 
-  const scrollToPricing = useCallback(() => {
-    document
-      .getElementById('pricing')
-      ?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  // const scrollToPricing = useCallback(() => {
+  //   document
+  //     .getElementById('pricing')
+  //     ?.scrollIntoView({ behavior: 'smooth' });
+  // }, []);
 
-  function createRipple(container: HTMLButtonElement, e: React.MouseEvent) {
-    // clean up old ripple if still around
-    const old = container.querySelector<HTMLElement>('.ripple_button');
-    if (old) old.remove();
+  // function createRipple(container: HTMLButtonElement, e: React.MouseEvent) {
+  //   // clean up old ripple if still around
+  //   const old = container.querySelector<HTMLElement>('.ripple_button');
+  //   if (old) old.remove();
 
-    const rect = container.getBoundingClientRect();
-    // diameter should cover the whole circle
-    const diameter = Math.max(rect.width, rect.height);
-    const radius = diameter / 2;
+  //   const rect = container.getBoundingClientRect();
+  //   // diameter should cover the whole circle
+  //   const diameter = Math.max(rect.width, rect.height);
+  //   const radius = diameter / 2;
 
-    // where in the element was the click?
-    const x = e.clientX - rect.left - radius;
-    const y = e.clientY - rect.top - radius;
+  //   // where in the element was the click?
+  //   const x = e.clientX - rect.left - radius;
+  //   const y = e.clientY - rect.top - radius;
 
-    const span = document.createElement('span');
-    span.className = 'ripple_button';
-    span.style.width = span.style.height = `${diameter}px`;
-    span.style.left = `${x}px`;
-    span.style.top = `${y}px`;
+  //   const span = document.createElement('span');
+  //   span.className = 'ripple_button';
+  //   span.style.width = span.style.height = `${diameter}px`;
+  //   span.style.left = `${x}px`;
+  //   span.style.top = `${y}px`;
 
-    container.appendChild(span);
-    // remove when done
-    span.addEventListener('animationend', () => span.remove());
-  }
+  //   container.appendChild(span);
+  //   // remove when done
+  //   span.addEventListener('animationend', () => span.remove());
+  // }
 
 
   return (

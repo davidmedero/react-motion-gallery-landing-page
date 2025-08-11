@@ -1,0 +1,45 @@
+:root { --menu-dur: 160ms; }
+
+.backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.06);
+  opacity: 0;
+  transition: opacity var(--menu-dur) ease;
+  z-index: 40;
+  pointer-events: none;
+}
+.backdrop.open   { opacity: .06; pointer-events: auto; }
+.backdrop.closed { opacity: 0;   pointer-events: none; }
+
+.panel {
+  position: absolute; right: 0; margin-top: 8px; width: 10rem;
+  background: #fff; border-radius: .5rem; box-shadow: 0 10px 20px rgba(0,0,0,.12);
+  outline: none; overflow: hidden; z-index: 50;
+
+  transform-origin: top right;
+  transition:
+    opacity var(--menu-dur) ease,
+    transform var(--menu-dur) cubic-bezier(.22,.61,.36,1);
+  will-change: opacity, transform;
+}
+
+.panel.closed {
+  opacity: 0;
+  transform: scale(.96) translateY(-6px);
+  pointer-events: none;
+}
+
+.panel.open {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* optional item stagger */
+.list { padding: 4px 0; }
+.list > * { opacity: 0; transform: translateY(-4px);
+  transition: opacity 120ms ease, transform 120ms ease; }
+.panel.open .list > * { opacity: 1; transform: translateY(0); }
+.list > *:nth-child(1){ transition-delay: 40ms; }
+.list > *:nth-child(2){ transition-delay: 70ms; }
+.list > *:nth-child(3){ transition-delay: 100ms; }

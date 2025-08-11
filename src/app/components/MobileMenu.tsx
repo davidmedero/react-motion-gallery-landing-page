@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import styles from "./MobileMenu.module.css";
 
 type MenuItem =
   | { type: "link"; href: string; label: string }
@@ -12,9 +13,36 @@ type MenuItem =
 
 export default function MobileMenu({ items }: { items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
+  const [present, setPresent] = useState(false);
+  const [entered, setEntered] = useState(false);
+
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | HTMLAnchorElement | null>>([]);
+
+  // when open toggles, coordinate mount + animation
+useEffect(() => {
+  if (open) {
+    // 1) mount
+    setPresent(true);
+    // 2) next frame -> add 'open' class so transition runs
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEntered(true));
+    });
+  } else {
+    // start closing transition
+    setEntered(false);
+  }
+}, [open]);
+
+// unmount after close transition completes
+function onPanelTransitionEnd(e: React.TransitionEvent<HTMLDivElement>) {
+  if (e.target !== e.currentTarget) return;
+  if (!entered) setPresent(false);
+}
+
+  // when opening, ensure it's mounted
+  useEffect(() => { if (open) setPresent(true); }, [open]);
 
   // Close on click outside
   useEffect(() => {
@@ -119,31 +147,37 @@ export default function MobileMenu({ items }: { items: MenuItem[] }) {
         onClick={() => setOpen(v => !v)}
         className="p-2 rounded-md text-[#0A0A0A] hover:bg-white/10 focus:outline-none ring-2 ring-white cursor-pointer"
       >
-        {/* Simple icon swap */}
-        <span className="sr-only">Open menu</span>
+        <span className="sr-only">Toggle menu</span>
         {!open ? (
-          // Bars icon
           <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
             <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" />
           </svg>
         ) : (
-          // X icon
           <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
             <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2" />
           </svg>
         )}
       </button>
 
-      {open && (
+      {(open || present) && (
+        <div
+          className={`${styles.backdrop} ${entered ? styles.open : styles.closed}`}
+          onClick={() => setOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      {/* Panel stays mounted while animating out */}
+      {(open || present) && (
         <div
           id="mobile-menu-panel"
           role="menu"
           ref={panelRef}
           tabIndex={-1}
-          onKeyDown={onPanelKeyDown}
-          className="absolute right-0 mt-2 w-40 bg-[rgba(255,255,255,1)] rounded-lg shadow-lg outline-none overflow-hidden"
+          className={`${styles.panel} ${entered ? styles.open : styles.closed}`}
+          onTransitionEnd={onPanelTransitionEnd}
         >
-          <ul>
+          <ul className={styles.list}>
             {items.map((item, i) => {
               const common =
                 "block w-full text-left px-4 py-2 text-[#0A0A0A] hover:bg-blue-400/10 focus:bg-blue-400/10 outline-none";
@@ -156,6 +190,7 @@ export default function MobileMenu({ items }: { items: MenuItem[] }) {
                       role="menuitem"
                       tabIndex={0}
                       className={common}
+                      style={{ cursor: 'pointer' }}
                       onKeyDown={(e) => onItemKeyDown(e, i)}
                       onClick={() => handleItemClick(item)}
                     >
