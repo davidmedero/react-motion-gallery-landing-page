@@ -80,6 +80,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
   function handleClose(e: any) {
     if ((e.target as HTMLElement).closest(".close-button")) {
       // Close button clicked; closing modal immediately.
+      unlockBody();
       proceedToClose(e);
       return;
     }
@@ -367,7 +368,6 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       };
   
       if (overlayDivRef.current) overlayDivRef.current.remove();
-      unlockBody();
       onClose();
       setShowFullscreenSlider(false);
       scaleStore.setScale(1);

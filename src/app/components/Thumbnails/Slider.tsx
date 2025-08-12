@@ -5,7 +5,7 @@ import { useRef, useEffect, ReactNode, cloneElement, Children, useState, createR
 import type SimpleBarCore from 'simplebar';
 import styles from './Slider.module.css';
 import slideStore from './slideStore';
-import { lockBody } from '../../lib/scrollLock';
+import { lockBody, unlockBody } from '../../lib/scrollLock';
 
 function useSlideIndex() {
   return useSyncExternalStore(
@@ -1251,6 +1251,7 @@ const Slider = ({
       requestAnimationFrame(() => {
         if (!duplicateImg) return;
         duplicateImg.remove();
+        unlockBody();
       })
     })
   }, [showFullscreenSlider]);

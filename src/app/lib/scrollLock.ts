@@ -2,13 +2,11 @@ let locks = 0;
 
 function apply() {
   const b = document.body;
-  b.style.overflow = 'hidden';
   b.style.touchAction = 'none';
 }
 
 function remove() {
   const b = document.body;
-  b.style.overflow = '';
   b.style.touchAction = '';
 }
 
