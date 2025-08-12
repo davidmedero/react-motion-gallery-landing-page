@@ -1058,7 +1058,7 @@ const Slider = ({
     };
   }, []);
 
-  const SHIELD_TIMEOUT = 300;
+  const SHIELD_TIMEOUT = 400;
 
   function addGestureShield() {
     const shield = document.createElement('div');
