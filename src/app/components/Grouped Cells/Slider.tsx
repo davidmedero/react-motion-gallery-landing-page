@@ -4,7 +4,7 @@
 import { useRef, useEffect, ReactNode, cloneElement, Children, useState, createRef, Dispatch, SetStateAction, ReactElement, HTMLAttributes, ClassAttributes, RefObject, useLayoutEffect, useSyncExternalStore, isValidElement } from "react";
 import slideStore from './slideStore';
 import styles from './Slider.module.css';
-import { lockBody, unlockBody } from '../../lib/scrollLock';
+import { lockBody, unlockBody } from './scrollLock';
 
 function useSlideIndex() {
   return useSyncExternalStore(
@@ -443,6 +443,7 @@ const Slider = ({
 
       slides.current = newSlides;
       setSlidesState(newSlides);
+      console.log(newSlides)
     }
 
     // kick off the RAF‑retry
@@ -1238,6 +1239,8 @@ const Slider = ({
     if (!isVerticalScroll) {
       // horizontal gesture → only prevent default to block browser from hijacking it
       e.preventDefault();
+    } else {
+
     }
   }
 
@@ -1266,7 +1269,7 @@ const Slider = ({
     const y = (rect.height / 2) - radius;
 
     const span = document.createElement('span');
-    span.className = 'ripple';
+    span.className = styles['ripple'];
     span.style.width  = `${diameter}px`;
     span.style.height = `${diameter}px`;
     span.style.left   = `${x}px`;
@@ -1387,7 +1390,7 @@ const Slider = ({
                   isScrolling.current = false;
                   select(index);
                 }}
-                className={`pagination-dot ${isActive ? "active" : "inactive"}`}
+                className={`${styles.pagination_dot} ${isActive ? styles.active : styles.inactive}`}
               />
             );
           })}

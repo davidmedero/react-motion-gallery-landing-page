@@ -5,7 +5,7 @@ import React, { Dispatch, RefObject, SetStateAction, useEffect, useSyncExternalS
 import scaleStore from './scaleStore';
 import slideStore from './slideStore';
 import fullscreenSlideStore from './fullscreenSlideStore';
-import { unlockBody } from '../../lib/scrollLock';
+import { unlockBody } from './scrollLock';
 import { MediaItem } from "./";
 
 function useSlideIndex() {
@@ -37,6 +37,7 @@ interface FullscreenModalProps {
   sliderVelocity: RefObject<number>;
   isWrapping: RefObject<boolean>;
   wrappedItems: MediaItem[];
+  setClosingModal: Dispatch<SetStateAction<boolean>>;
 }
 
 const FullscreenModal: React.FC<FullscreenModalProps> = ({
@@ -59,6 +60,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
   sliderVelocity,
   isWrapping,
   wrappedItems,
+  setClosingModal,
   children,
 }) => {  
 
@@ -124,6 +126,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
     isAnimating.current = false;
     isClick.current = false;
     cells.current = [];
+    setClosingModal(true);
 
     const slideArr = slides.current;
     // find the slide whose cells include the fullscreen image index
@@ -245,6 +248,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       }
 
       if (currentIndex !== Number(counter?.textContent?.split('/')[0]) ) {
+        console.log('test')
         if (currentIndex === 0 && (Math.abs(currentTranslateX) >= slider.scrollWidth - slider.getBoundingClientRect().width * 1.5 && Math.abs(currentTranslateX) <= slider.scrollWidth - slider.getBoundingClientRect().width) && React.isValidElement<{ imageCount: number }>(children)) {
           const { imageCount } = children.props
           targetImg = document.querySelector(`.fullscreen_slider img[data-index="${imageCount + 1}"]`) as HTMLImageElement | null;
@@ -324,9 +328,8 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
         });
       }
     }
-    console.log('yup 1')
+
     if (!targetImg || !overlayDivRef.current || !rect) return;
-    console.log('yup 2')
   
     const zoomedImg = targetImg;
     const zoomedRect = targetImg.getBoundingClientRect();
@@ -385,6 +388,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       if (overlayDivRef.current) overlayDivRef.current.remove();
       onClose();
       setShowFullscreenSlider(false);
+      setClosingModal(false);
       scaleStore.setScale(1);
       zoomedImg.style.height = "100%";
     }, 300);
@@ -399,7 +403,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9000,
+        zIndex: 9000, 
         contain: 'layout style size',
       }}
     >

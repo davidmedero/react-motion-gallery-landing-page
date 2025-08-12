@@ -309,9 +309,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           }}
         >
           {isVideo ? (
-            // If you want to *show* the video in fullscreen, keep Plyr
-            // If you prefer a still in fullscreen until play, you could use <img src={videoThumb} />
-            <div data-index={index} className="myPlayer">
+            <div data-index={index} className={`${styles.myPlayer} myPlayer`}>
               <Plyr
                 source={plyrProps!.source}
                 options={plyrProps!.options}
@@ -382,7 +380,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           }}
         >
           {isVideo ? (
-            <div data-index={index} className="myPlayer">
+            <div data-index={index} className={`${styles.myPlayer} myPlayer`}>
               <Plyr
                 source={plyr!.source}
                 options={plyr!.options}

@@ -1095,7 +1095,7 @@ const Slider = ({
     const y = (rect.height / 2) - radius;
 
     const span = document.createElement('span');
-    span.className = 'ripple';
+    span.className = styles['ripple'];
     span.style.width  = `${diameter}px`;
     span.style.height = `${diameter}px`;
     span.style.left   = `${x}px`;

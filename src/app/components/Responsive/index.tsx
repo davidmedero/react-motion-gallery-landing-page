@@ -156,6 +156,7 @@ export default function ResponsiveSlider({ items, urls }: Props) {
   const zoomY = useRef(0);
   const zoomOffset = useRef(0);
   const zoomIncreaseDiff = useRef(0);
+  const [closingModal, setClosingModal] = useState(false);
   const slides = useRef<{ cells: { element: HTMLElement, index: number }[], target: number }[]>([]);
   const slider = useRef<HTMLDivElement | null>(null);
   const visibleImagesRef = useRef(0);
@@ -262,9 +263,7 @@ export default function ResponsiveSlider({ items, urls }: Props) {
           }}
         >
           {isVideo ? (
-            // If you want to *show* the video in fullscreen, keep Plyr
-            // If you prefer a still in fullscreen until play, you could use <img src={videoThumb} />
-            <div data-index={index} className="myPlayer">
+            <div data-index={index} className={`${styles.myPlayer} myPlayer`}>
               <Plyr
                 source={plyrProps!.source}
                 options={plyrProps!.options}
@@ -335,7 +334,7 @@ export default function ResponsiveSlider({ items, urls }: Props) {
           }}
         >
           {isVideo ? (
-            <div data-index={index} className="myPlayer">
+            <div data-index={index} className={`${styles.myPlayer} myPlayer`}>
               <Plyr
                 source={plyr!.source}
                 options={plyr!.options}
@@ -1636,6 +1635,7 @@ export default function ResponsiveSlider({ items, urls }: Props) {
         sliderVelocity={sliderVelocity}
         isWrapping={isWrapping}
         wrappedItems={wrappedItems}
+        setClosingModal={setClosingModal}
       >
         <FullscreenSlider 
           ref={sliderApi}
@@ -1657,6 +1657,7 @@ export default function ResponsiveSlider({ items, urls }: Props) {
           isZooming={isZooming}
           plyrRefs={plyrRefs}
           plyrRef={plyrRef}
+          closingModal={closingModal}
         >
           {normalizedItems.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
         </FullscreenSlider>

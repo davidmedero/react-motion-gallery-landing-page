@@ -4,7 +4,7 @@
 import { useRef, useEffect, ReactNode, cloneElement, Children, useState, createRef, Dispatch, SetStateAction, ReactElement, HTMLAttributes, ClassAttributes, RefObject, useLayoutEffect, isValidElement } from "react";
 import styles from './Slider.module.css';
 import slideStore from './slideStore';
-import { lockBody, unlockBody } from '../../lib/scrollLock';
+import { lockBody, unlockBody } from './scrollLock';
 
 // function useSlideIndex() {
 //   return useSyncExternalStore(
@@ -1203,7 +1203,7 @@ const Slider = ({
     const y = (rect.height / 2) - radius;
 
     const span = document.createElement('span');
-    span.className = 'ripple';
+    span.className = styles['ripple'];
     span.style.width  = `${diameter}px`;
     span.style.height = `${diameter}px`;
     span.style.left   = `${x}px`;

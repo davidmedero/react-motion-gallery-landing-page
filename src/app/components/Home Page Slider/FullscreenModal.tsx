@@ -37,6 +37,7 @@ interface FullscreenModalProps {
   sliderVelocity: RefObject<number>;
   isWrapping: RefObject<boolean>;
   wrappedItems: MediaItem[];
+  setClosingModal: Dispatch<SetStateAction<boolean>>;
 }
 
 const FullscreenModal: React.FC<FullscreenModalProps> = ({
@@ -59,6 +60,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
   sliderVelocity,
   isWrapping,
   wrappedItems,
+  setClosingModal,
   children,
 }) => {  
 
@@ -124,6 +126,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
     isAnimating.current = false;
     isClick.current = false;
     cells.current = [];
+    setClosingModal(true);
 
     const slideArr = slides.current;
     // find the slide whose cells include the fullscreen image index
@@ -385,6 +388,7 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
       if (overlayDivRef.current) overlayDivRef.current.remove();
       onClose();
       setShowFullscreenSlider(false);
+      setClosingModal(false);
       scaleStore.setScale(1);
       zoomedImg.style.height = "100%";
     }, 300);

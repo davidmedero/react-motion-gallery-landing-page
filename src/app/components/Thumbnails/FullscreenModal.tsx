@@ -4,7 +4,7 @@
 import React, { Dispatch, RefObject, SetStateAction, useEffect, useSyncExternalStore } from "react";
 import scaleStore from './scaleStore';
 import fullscreenSlideStore from './fullscreenSlideStore';
-import { unlockBody } from '../../lib/scrollLock';
+import { unlockBody } from './scrollLock';
 import { MediaItem } from "./";
 
 function useSlideIndex() {

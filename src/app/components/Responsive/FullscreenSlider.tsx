@@ -27,6 +27,7 @@ interface FullscreenSliderProps {
   isZooming: RefObject<boolean>;
   plyrRefs: RefObject<(APITypes | null)[]>;
   plyrRef: RefObject<(APITypes | null)[]>;
+  closingModal: boolean;
 }
 
 export interface FullscreenSliderHandle {
@@ -53,7 +54,8 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
       zoomedDuringWrap,
       isZooming,
       plyrRefs,
-      plyrRef
+      plyrRef,
+      closingModal
     },
     ref
   ) => {
@@ -204,6 +206,9 @@ const FullscreenSlider = forwardRef<FullscreenSliderHandle, FullscreenSliderProp
     if (isZoomed) return;
     const target = e.target as HTMLElement;
     if (target.closest(".plyr__controls")) {
+      return;
+    };
+    if (closingModal) {
       return;
     };
     isScrolling.current = false;

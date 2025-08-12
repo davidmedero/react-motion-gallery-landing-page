@@ -56,3 +56,45 @@
     animation: none;
   }
 }
+
+.pagination_dot {
+  width: 14px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 50%;
+  margin: 5px 5px 5px 5px;
+  cursor: pointer;
+  transition: 
+    transform 0.2s ease, 
+    background-color 0.3s ease, 
+    box-shadow 0.3s ease;
+}
+
+.pagination_dot:hover {
+  transform: scale(1.2);
+}
+
+.pagination_dot.active {
+  background-color: rgb(80, 163, 255);
+  box-shadow: 0 0 8px rgba(80, 163, 255, 0.6);
+}
+
+.pagination_dot.inactive {
+  background-color: lightgray;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 600ms linear;
+  background-color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}

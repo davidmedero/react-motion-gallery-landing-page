@@ -1,6 +1,7 @@
 .container {
   height: 606px;
   max-height: 606px;
+  overflow-x: hidden;
 }
 
 .columns_container {
@@ -188,4 +189,13 @@
   .shimmerOverlay {
     animation: none;
   }
+}
+
+.myPlayer {
+  aspect-ratio: 16 / 9 !important;
+  width: 100vw !important;
+  height: auto !important;
+  max-width: calc(100vh * (16 / 9)) !important;
+  margin: 0 auto !important;
+  position: relative !important;
 }
