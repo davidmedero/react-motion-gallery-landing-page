@@ -77,21 +77,21 @@ function onPanelTransitionEnd(e: React.TransitionEvent<HTMLDivElement>) {
     if (el) el.focus();
   }
 
-  function onPanelKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      setOpen(false);
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      focusItem(0);
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      focusItem(items.length - 1);
-    }
-  }
+  // function onPanelKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+  //   if (e.key === "Escape") {
+  //     e.preventDefault();
+  //     setOpen(false);
+  //     return;
+  //   }
+  //   if (e.key === "ArrowDown") {
+  //     e.preventDefault();
+  //     focusItem(0);
+  //   }
+  //   if (e.key === "ArrowUp") {
+  //     e.preventDefault();
+  //     focusItem(items.length - 1);
+  //   }
+  // }
 
   function onItemKeyDown(e: React.KeyboardEvent, idx: number) {
     if (e.key === "Escape") {

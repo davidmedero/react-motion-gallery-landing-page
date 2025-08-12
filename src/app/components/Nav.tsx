@@ -2,8 +2,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { Menu, MenuItems, MenuItem, MenuButton, Transition } from '@headlessui/react';
 import { Fragment, useId, useRef } from 'react';
 import { useOverlay } from '../contexts/OverlayContext';
 import MobileMenu from './MobileMenu';
