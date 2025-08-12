@@ -296,7 +296,7 @@ body::before {
   position: relative;
   border: none;
   padding: 0;
-  margin-top: 20px;
+  margin-top: 40px;
   cursor: pointer;
   border-radius: 8px;
   width: 100%;
@@ -349,7 +349,7 @@ body::before {
   position: relative;
   border: none;
   padding: 0;
-  margin-top: 20px;
+  margin-top: 40px;
   cursor: pointer;
   border-radius: 8px;
   width: 100%;

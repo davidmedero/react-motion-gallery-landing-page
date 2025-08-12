@@ -41,3 +41,54 @@
 .list > *:nth-child(1){ transition-delay: 40ms; }
 .list > *:nth-child(2){ transition-delay: 70ms; }
 .list > *:nth-child(3){ transition-delay: 100ms; }
+
+/* --- Fluid Hamburger -> X --- */
+.burger {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+
+  /* springy + squishy transitions */
+  transition:
+    transform .38s cubic-bezier(.2,.8,.2,1.4),
+    width     .38s cubic-bezier(.2,.8,.2,1.4);
+
+  /* subtle “fluid” glow that appears during morph */
+  isolation: isolate;
+}
+
+/* initial positions */
+.top    { transform: translate(-50%, calc(50% - 10px)); }
+.middle { transform: translate(-50%, -50%); }
+.bottom { transform: translate(-50%, calc(50% + 8px)); }
+
+/* small stagger for extra fluidity */
+.top    { transition-delay: 20ms; }
+.middle { transition-delay: 0ms; }
+.bottom { transition-delay: 40ms; }
+
+/* OPEN STATE -> X */
+button[data-open="true"] .top {
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 26px;
+}
+button[data-open="true"] .middle {
+  transform: translate(-50%, -50%) scaleX(0.2);
+}
+button[data-open="true"] .bottom {
+  transform: translate(-50%, -50%) rotate(-45deg);
+  width: 26px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .burger,
+  .burger::after {
+    transition: none !important;
+  }
+}

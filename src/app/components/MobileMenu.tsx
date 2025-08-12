@@ -141,22 +141,17 @@ function onPanelTransitionEnd(e: React.TransitionEvent<HTMLDivElement>) {
       <button
         ref={btnRef}
         type="button"
+        aria-label="Toggle menu"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="mobile-menu-panel"
+        data-open={open}
         onClick={() => setOpen(v => !v)}
-        className="p-2 rounded-md text-[#0A0A0A] hover:bg-white/10 focus:outline-none ring-2 ring-white cursor-pointer"
+        className="p-5 rounded-md text-[#0A0A0A] focus:outline-none ring-2 ring-white cursor-pointer relative z-[60]"
       >
-        <span className="sr-only">Toggle menu</span>
-        {!open ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
-            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" />
-          </svg>
-        ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
-            <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2" />
-          </svg>
-        )}
+        <span className={`${styles.burger} ${styles.top}`} aria-hidden />
+        <span className={`${styles.burger} ${styles.middle}`} aria-hidden />
+        <span className={`${styles.burger} ${styles.bottom}`} aria-hidden />
       </button>
 
       {(open || present) && (

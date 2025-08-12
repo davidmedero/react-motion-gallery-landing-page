@@ -16,7 +16,7 @@ export default function Pricing() {
               $25
               <span className="text-lg font-bold align-top ml-2 text-blue-400">/ Life</span>
             </p>
-            <p className="text-sm text-[rgba(0,0,0,0.8)] mb-6">One-time payment</p>
+            <p className="text-sm text-gray-500 mb-6">One-time payment</p>
             <ul className="list-disc list-outside space-y-2 text-[rgba(0,0,0,0.8)] pl-4">
               <li>Includes all current and future components</li>
               <li>Lifetime Access to Github Repo</li>
@@ -44,7 +44,7 @@ export default function Pricing() {
               $200
               <span className="text-lg font-bold align-top ml-2 text-pink-400">/ Life</span>
             </p>
-            <p className="text-sm text-[rgba(0,0,0,0.8)] mb-6">One-time payment</p>
+            <p className="text-sm text-gray-500 mb-6">One-time payment</p>
           <ul className="list-disc list-outside space-y-2 text-[rgba(0,0,0,0.8)] pl-4">
             <li>Everything in Starter</li>
             <li>24/7 Priority Support</li>
