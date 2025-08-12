@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import Link from 'next/link';
@@ -107,6 +108,16 @@ export default function Nav() {
   const demosRef = useRef(null);
   const guidesRef = useRef(null);
 
+  // handy classes for the animated underline on the inner <span>
+  const underlineSpan = (active: boolean) =>
+    [
+      "relative inline-block",
+      "after:absolute after:left-0 after:-bottom-0.5 after:h-[2px] after:w-full",
+      "after:bg-blue-400 after:rounded-full after:origin-left",
+      "after:transition-transform after:duration-200 after:ease-out",
+      active ? "after:scale-x-100" : "after:scale-x-0 group-hover:after:scale-x-100 group-focus-visible:after:scale-x-100",
+    ].join(" ");
+
   function scrollToPricing() {
     if (pathname === "/") {
       // wait a tick so the menu has closed/layout settled
@@ -123,7 +134,7 @@ export default function Nav() {
 
   function createRipple(container: HTMLElement) {
     // remove old ripple
-    const old = container.querySelector<HTMLElement>('.ripple');
+    const old = container.querySelector<HTMLElement>('.ripple_nav');
     if (old) old.remove();
 
     const rect = container.getBoundingClientRect();
@@ -136,7 +147,7 @@ export default function Nav() {
     const y = (rect.height / 2) - radius;
 
     const span = document.createElement('span');
-    span.className = 'ripple';
+    span.className = 'ripple_nav';
     span.style.width  = `${diameter}px`;
     span.style.height = `${diameter}px`;
     span.style.left   = `${x}px`;
@@ -145,6 +156,10 @@ export default function Nav() {
     container.appendChild(span);
     span.addEventListener('animationend', () => span.remove());
   };
+
+  const linkBase =
+  "group relative p-5 overflow-hidden transition-colors duration-200 ease-out text-[#0A0A0A] hover:text-blue-400 focus-visible:text-blue-400 cursor-pointer";
+
 
   
   return (
@@ -183,37 +198,48 @@ export default function Nav() {
             <div className="flex items-center">
               {/* Desktop links */}
               <div className="hidden md:flex">
-                <button 
-                  ref={getAccessRef}
-                  onClick={() => {
-                    const btn = getAccessRef.current;
-                    if (btn) createRipple(btn);
-                    scrollToPricing();
-                  }} 
-                  className="text-[#0A0A0A] hover:text-blue-400 transition cursor-pointer relative p-5 overflow-hidden">
-                  Get Access
-                </button>
-                <Link 
-                  ref={demosRef}
-                  onClick={() => {
-                    const btn = demosRef.current;
-                    if (btn) createRipple(btn);
-                  }}
-                  href="/demos"
-                  className="text-[#0A0A0A] hover:text-blue-400 transition relative p-5 overflow-hidden">
-                  Demos
-                </Link>
-                <Link 
-                  ref={guidesRef}
-                  onClick={() => {
-                    const btn = guidesRef.current;
-                    if (btn) createRipple(btn);
-                  }}
-                  href="/guides"
-                  className="text-[#0A0A0A] hover:text-blue-400 transition relative p-5 overflow-hidden">
-                  Guides
-                </Link>
-              </div>
+              {/* Get Access (button that scrolls; underline only on hover/focus) */}
+              <button
+                ref={getAccessRef}
+                onClick={() => {
+                  const btn = getAccessRef.current;
+                  if (btn) createRipple(btn);
+                  scrollToPricing();
+                }}
+                className={linkBase}
+              >
+                <span className={underlineSpan(false)}>Get Access</span>
+              </button>
+
+              {/* Demos */}
+              <Link
+                ref={demosRef as any}
+                href="/demos"
+                aria-current={pathname === "/demos" ? "page" : undefined}
+                onClick={() => {
+                  const btn = demosRef.current as unknown as HTMLElement | null;
+                  if (btn) createRipple(btn);
+                }}
+                className={`${linkBase} ${pathname === "/demos" ? "text-blue-400" : ""}`}
+              >
+                <span className={underlineSpan(pathname === "/demos")}>Demos</span>
+              </Link>
+
+              {/* Guides */}
+              <Link
+                ref={guidesRef as any}
+                href="/guides"
+                aria-current={pathname === "/guides" ? "page" : undefined}
+                onClick={() => {
+                  const btn = guidesRef.current as unknown as HTMLElement | null;
+                  if (btn) createRipple(btn);
+                }}
+                className={`${linkBase} ${pathname === "/guides" ? "text-blue-400" : ""}`}
+              >
+                <span className={underlineSpan(pathname === "/guides")}>Guides</span>
+              </Link>
+            </div>
+
 
               <MobileMenu
                 items={[

@@ -259,3 +259,125 @@ body::before {
   top: 0;
   z-index: 100;
 }
+
+.ripple_nav {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple_nav 600ms linear;
+  background-color: rgba(251, 101, 182, 0.2);
+  pointer-events: none;
+}
+
+@keyframes ripple_nav {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.starter__cta_front {
+  transition:
+    all
+    300ms
+    cubic-bezier(.3, .7, .4, 1);
+}
+
+.starter__cta_pushable:hover .starter__cta_front {
+  transition:
+    all
+    250ms
+    cubic-bezier(.3, .7, .4, 2);
+    background-color: rgb(59, 130, 246);
+    border-color: rgb(59, 130, 246);
+}
+
+.starter__cta_pushable {
+  position: relative;
+  border: none;
+  padding: 0;
+  margin-top: 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  width: 100%;
+  box-shadow: rgb(47, 104, 197) 0px 0px 0 0px;
+}
+
+.starter__cta_front {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0.5rem 1.2rem;
+  color: #fff !important;
+  background-color: rgb(80, 163, 255);
+  border: 1px solid rgb(80, 163, 255);
+  box-shadow: rgb(47, 104, 197) 0px 0px 0 0px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  z-index: 2;
+}
+
+.starter__cta_pushable:hover .starter__cta_front {
+  box-shadow: rgb(47, 104, 197) 5px 5px 0 0px;
+  transform: translate(-6px, -6px);
+}
+
+.starter__cta_pushable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.pro__cta_front {
+  transition:
+    all
+    300ms
+    cubic-bezier(.3, .7, .4, 1);
+}
+
+.pro__cta_pushable:hover .pro__cta_front {
+  transition:
+    all
+    250ms
+    cubic-bezier(.3, .7, .4, 2);
+    background-color: #f6339a;
+    border-color: #f6339a;
+}
+
+.pro__cta_pushable {
+  position: relative;
+  border: none;
+  padding: 0;
+  margin-top: 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  width: 100%;
+  box-shadow: rgb(197, 40, 123) 0px 0px 0 0px;
+}
+
+.pro__cta_front {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0.5rem 1.2rem;
+  color: #fff !important;
+  background-color: #fb64b6;
+  border: 1px solid #fb64b6;
+  box-shadow: rgb(197, 40, 123) 0px 0px 0 0px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  z-index: 2;
+}
+
+.pro__cta_pushable:hover .pro__cta_front {
+  box-shadow: rgb(197, 40, 123) 5px 5px 0 0px;
+  transform: translate(-6px, -6px);
+}
+
+.pro__cta_pushable:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -1,10 +1,8 @@
-:root { --menu-dur: 160ms; }
-
 .backdrop {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.06);
   opacity: 0;
-  transition: opacity var(--menu-dur) ease;
+  transition: opacity 160ms ease;
   z-index: 40;
   pointer-events: none;
 }
@@ -18,8 +16,8 @@
 
   transform-origin: top right;
   transition:
-    opacity var(--menu-dur) ease,
-    transform var(--menu-dur) cubic-bezier(.22,.61,.36,1);
+    opacity 160ms ease,
+    transform 160ms cubic-bezier(.22,.61,.36,1);
   will-change: opacity, transform;
 }
 

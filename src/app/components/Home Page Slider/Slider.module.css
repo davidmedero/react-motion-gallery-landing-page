@@ -1,5 +1,6 @@
 .slider_container {
   cursor: grab;
+  overflow-x: hidden;
 }
 
 .slider_container:active {
