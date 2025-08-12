@@ -5,7 +5,6 @@ import React, { Dispatch, RefObject, SetStateAction, useEffect, useSyncExternalS
 import scaleStore from './scaleStore';
 import slideStore from './slideStore';
 import fullscreenSlideStore from './fullscreenSlideStore';
-import { unlockBody } from './scrollLock';
 import { MediaItem } from ".";
 
 function useSlideIndex() {
@@ -82,7 +81,6 @@ const FullscreenModal: React.FC<FullscreenModalProps> = ({
   function handleClose(e: any) {
     if ((e.target as HTMLElement).closest(".close-button")) {
       // Close button clicked; closing modal immediately.
-      unlockBody();
       proceedToClose(e);
       return;
     }

@@ -4,7 +4,6 @@
 import { useRef, useEffect, ReactNode, cloneElement, Children, useState, createRef, Dispatch, SetStateAction, ReactElement, HTMLAttributes, ClassAttributes, RefObject, useLayoutEffect, useSyncExternalStore, isValidElement } from "react";
 import slideStore from './slideStore';
 import styles from './Slider.module.css';
-import { lockBody, unlockBody } from '../../lib/scrollLock';
 
 function useSlideIndex() {
   return useSyncExternalStore(
@@ -1080,12 +1079,32 @@ const Slider = ({
     };
   }, []);
 
+  const SHIELD_TIMEOUT = 300;
+
+  function addGestureShield() {
+    const shield = document.createElement('div');
+    Object.assign(shield.style, {
+      position: 'fixed',
+      inset: '0',
+      zIndex: '10000',
+      background: 'transparent',
+      touchAction: 'none',
+      pointerEvents: 'auto',
+    });
+    document.body.appendChild(shield);
+
+    const remove = () => { shield.remove(); };
+    const timer = window.setTimeout(remove, SHIELD_TIMEOUT);
+
+    return () => { window.clearTimeout(timer); remove(); };
+  }
+
   function toggleFullscreen(e: React.PointerEvent<HTMLDivElement>, imgRef: RefObject<HTMLImageElement | null>, index: number) {
     const origImg   = imgRef.current;
     const container = sliderContainer.current;
     if (!origImg || !container) return;
 
-    lockBody();
+    addGestureShield();
 
     const imgRect = origImg.getBoundingClientRect();
 
@@ -1241,7 +1260,6 @@ const Slider = ({
       requestAnimationFrame(() => {
         if (!duplicateImg) return;
         duplicateImg.remove();
-        unlockBody();
       })
     })
   }, [showFullscreenSlider]);
