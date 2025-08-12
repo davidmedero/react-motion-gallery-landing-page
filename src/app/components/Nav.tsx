@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { useOverlay } from '../contexts/OverlayContext';
 import MobileMenu from './MobileMenu';
 import { usePathname, useRouter } from 'next/navigation';

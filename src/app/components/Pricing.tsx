@@ -2,54 +2,6 @@
 
 export default function Pricing() {
 
-  function ThreeDButton({
-    variant = "blue",
-    children,
-    onClick,
-  }: {
-    variant?: "blue" | "pink";
-    children: React.ReactNode;
-    onClick?: () => void;
-  }) {
-    const v =
-      variant === "pink"
-        ? {
-            base: "bg-pink-500",
-            face: "bg-pink-400 group-hover:bg-pink-500 focus-visible:ring-pink-400",
-          }
-        : {
-            base: "bg-blue-500",
-            face: "bg-blue-400 group-hover:bg-blue-500 focus-visible:ring-blue-400",
-          };
-
-    return (
-      <button
-        onClick={onClick}
-        className="relative group w-full cursor-pointer select-none mt-6"
-        type="button"
-        aria-label={typeof children === "string" ? children : undefined}
-      >
-        {/* Base (stays put, becomes visible when face moves) */}
-        <span
-          className={`absolute inset-0 rounded-lg ${v.base}`}
-          aria-hidden
-        />
-        {/* Face (moves up/left on hover) */}
-        <span
-          className={`relative block w-full rounded-lg py-2 text-white font-semibold ${v.face}
-            transition-all duration-200 ease-out
-            motion-safe:group-hover:-translate-x-1.5 motion-safe:group-hover:-translate-y-1.5
-            motion-safe:group-hover:shadow-[0_8px_16px_rgba(0,0,0,0.15)]
-            group-active:translate-x-0 group-active:translate-y-0 group-active:shadow-none
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
-        >
-          {children}
-        </span>
-      </button>
-    );
-  }
-
-
   return (
     <section
       id="pricing"
