@@ -1836,6 +1836,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           isZooming={isZooming}
           plyrRefs={plyrRefs}
           plyrRef={plyrRef}
+          closingModal={closingModal}
         >
           {normalizedItems.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
         </FullscreenSlider>
