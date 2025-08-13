@@ -199,3 +199,31 @@
   margin: 0 auto !important;
   position: relative !important;
 }
+
+/* Local wrapper you apply around each SimpleBar instance */
+.scope {}
+
+/* Mobile size tweaks, but only inside this wrapper */
+@media (max-width: 535px) {
+  .scope :global(.simplebar-scrollable-y) {
+    width: 100% !important;
+    height: 160px !important;
+  }
+}
+
+/* Pointer events + cursors, scoped */
+.scope :global(.simplebar-track) { pointer-events: auto !important; }
+
+.scope :global(.simplebar-scrollbar) {
+  pointer-events: auto !important;
+  cursor: grab !important;
+}
+.scope :global(.simplebar-scrollbar:active) {
+  cursor: grabbing !important;
+}
+
+.scope :global(.simplebar-height-auto-observer-wrapper),
+.scope :global(.simplebar-placeholder),
+.scope :global(.simplebar-height-auto-observer) {
+  pointer-events: auto !important;
+}

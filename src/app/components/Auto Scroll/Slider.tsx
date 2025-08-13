@@ -490,7 +490,7 @@ const Slider = ({
   }
 
   function setDraggingCursor(on: boolean) {
-    document.body.classList.toggle('rmg-dragging', on);
+    sliderContainer.current?.classList.toggle(styles.dragging, on);
   }
 
   function handlePointerStart(e: PointerEvent) {

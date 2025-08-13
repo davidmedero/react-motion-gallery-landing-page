@@ -15,7 +15,6 @@ function withCacheBust(u: string) {
   }
 }
 
-
 export function useVideoThumbnails(urls: string[]): ThumbMap {
   const [thumbs, setThumbs] = useState<ThumbMap>({});
 

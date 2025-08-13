@@ -99,6 +99,11 @@ export default function SliderWrapper({ items, urls }: Props) {
   const isZooming = useRef(false);
   const expandableImgRefs = useRef([]);
   const overlayDivRef = useRef<HTMLDivElement | null>(null);
+  const duplicateImgRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLElement | null>(null);
+  const counterRef = useRef<HTMLElement | null>(null);
+  const leftChevronRef = useRef<HTMLElement | null>(null);
+  const rightChevronRef = useRef<HTMLElement | null>(null);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
   const [wrappedItems, setWrappedItems] = useState<MediaItem[]>([]);
   const [windowSize, setWindowSize] = useState({
@@ -247,9 +252,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           }}
         >
           {isVideo ? (
-            // If you want to *show* the video in fullscreen, keep Plyr
-            // If you prefer a still in fullscreen until play, you could use <img src={videoThumb} />
-            <div data-index={index} className="myPlayer">
+            <div data-index={index} className={`${styles.myPlayer} myPlayer`}>
               <Plyr
                 source={plyrProps!.source}
                 options={plyrProps!.options}
@@ -320,7 +323,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           }}
         >
           {isVideo ? (
-            <div data-index={index} className="myPlayer">
+            <div data-index={index} className={`${styles.myPlayer} myPlayer`}>
               <Plyr
                 source={plyr!.source}
                 options={plyr!.options}
@@ -1553,7 +1556,29 @@ export default function SliderWrapper({ items, urls }: Props) {
   return (
     <>
       <div className={styles.container}>
-        <Slider imageCount={normalizedItems.length} isClick={isClick} expandableImgRefs={expandableImgRefs} overlayDivRef={overlayDivRef} setSlideIndex={setSlideIndex} setShowFullscreenModal={setShowFullscreenModal} setShowFullscreenSlider={setShowFullscreenSlider} showFullscreenSlider={showFullscreenSlider} isWrapping={isWrapping} slides={slides} slider={slider} visibleImagesRef={visibleImagesRef} selectedIndex={selectedIndex} firstCellInSlide={firstCellInSlide} sliderX={sliderX} sliderVelocity={sliderVelocity}>
+        <Slider 
+          imageCount={normalizedItems.length} 
+          isClick={isClick} 
+          expandableImgRefs={expandableImgRefs} 
+          overlayDivRef={overlayDivRef} 
+          setSlideIndex={setSlideIndex} 
+          setShowFullscreenModal={setShowFullscreenModal} 
+          setShowFullscreenSlider={setShowFullscreenSlider} 
+          showFullscreenSlider={showFullscreenSlider} 
+          isWrapping={isWrapping} 
+          slides={slides} 
+          slider={slider} 
+          visibleImagesRef={visibleImagesRef} 
+          selectedIndex={selectedIndex} 
+          firstCellInSlide={firstCellInSlide} 
+          sliderX={sliderX} 
+          sliderVelocity={sliderVelocity}
+          duplicateImgRef={duplicateImgRef}
+          closeButtonRef={closeButtonRef}
+          counterRef={counterRef}
+          leftChevronRef={leftChevronRef}
+          rightChevronRef={rightChevronRef}
+        >
           {normalizedItems.map((item, i) => {
             if (item.kind === "video") {
               const thumbSrc = item.thumb ?? thumbnails[item.src];
@@ -1603,6 +1628,10 @@ export default function SliderWrapper({ items, urls }: Props) {
         isWrapping={isWrapping}
         wrappedItems={wrappedItems}
         setClosingModal={setClosingModal}
+        closeButtonRef={closeButtonRef}
+        counterRef={counterRef}
+        leftChevronRef={leftChevronRef}
+        rightChevronRef={rightChevronRef}
       >
         <FullscreenSlider 
           ref={fullscreenSliderApi}
@@ -1625,6 +1654,10 @@ export default function SliderWrapper({ items, urls }: Props) {
           plyrRefs={plyrRefs}
           plyrRef={plyrRef}
           closingModal={closingModal}
+          closeButtonRef={closeButtonRef}
+          counterRef={counterRef}
+          leftChevronRef={leftChevronRef}
+          rightChevronRef={rightChevronRef}
         >
           {normalizedItems.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
         </FullscreenSlider>

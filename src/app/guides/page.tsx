@@ -88,8 +88,10 @@ export default function Guides() {
   const [activeId, setActiveId] = useState<string>(leaves[0]?.id);
 
   const baseLink     = 'block rounded-md px-2 py-1 text-sm transition';
-  const activeLink   = 'bg-pink-400/70 text-white';
-  const inactiveLink = 'text-gray-600 hover:bg-blue-400/70 hover:text-white';
+  const activeLink   = 'text-gray-600 text-white focus-visible:text-white active:text-white bg-gradient-to-r focus-visible:bg-gradient-to-r active:bg-gradient-to-r from-pink-400/60 focus-visible:from-pink-400/60 active:from-pink-400/60 to-white-500/80 focus-visible:to-white-500/80 active:to-white-500/80';
+  const inactiveLink =
+  'text-gray-600 hover:text-white focus-visible:text-white active:text-white hover:bg-gradient-to-r focus-visible:bg-gradient-to-r active:bg-gradient-to-r hover:from-blue-400/80 focus-visible:from-blue-400/80 active:from-blue-400/80 hover:to-white-500/80 focus-visible:to-white-500/80 active:to-white-500/80';
+
 
   // ---------- Anchor-line active detection (stable) ----------
   const headingsRef = useRef<HTMLElement[]>([]);
@@ -443,7 +445,7 @@ export default function Guides() {
       <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-8">
 
         {/* ToC — sticky & scrollable only on desktop */}
-        <div className="lg:sticky lg:top-24 self-start rounded-[1rem] lg:overflow-hidden border border-[rgba(255,255,255,0.8)]">
+        <div className="lg:sticky lg:top-24 self-start rounded-[0.5rem] lg:overflow-hidden border border-[rgba(255,255,255,0.8)]">
           {isDesktop ? (
             <SimpleBarReact
               forceVisible="y"
@@ -463,10 +465,10 @@ export default function Guides() {
                           onClick={scrollTo(gidFor(group.label))}
                           aria-current={isDesktop && activeGroup === group.label ? 'true' : undefined}
                           className={[
-                            "text-sm font-semibold mb-1 inline-block underline-offset-4 transition",
+                            "text-sm font-semibold mb-1 inline-block transition w-full",
                             isDesktop && activeGroup === group.label
-                              ? "underline decoration-2 decoration-pink-400/70 text-pink-400/70"
-                              : "text-blue-400 hover:underline"
+                              ? "text-pink-400/70"
+                              : "text-gray-600 hover:text-blue-400/70"
                           ].join(" ")}
                         >
                           {group.label}

@@ -93,3 +93,86 @@
     opacity: 0;
   }
 }
+
+.fullscreenOverlay {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+  pointer-events: none;
+  background-color: transparent;
+  transition: opacity 0.3s, background-color 0.3s;
+  z-index: 8999;
+}
+.open { /* generic "opened" modifier */
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Flying-out duplicate image */
+.duplicateImg {
+  position: fixed;
+  display: none;
+  transform-origin: top left;
+  transition: transform 0.3s cubic-bezier(.4,0,.22,1);
+  z-index: 9998;
+}
+
+/* Controls: close, chevrons, counter share base styles */
+.closeBtn,
+.leftChevron,
+.rightChevron,
+.counter {
+  position: fixed;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(.4,0,.22,1);
+  z-index: 9999;
+}
+.closeBtn.open,
+.leftChevron.open,
+.rightChevron.open,
+.counter.open {
+  display: block;
+  opacity: 1;
+}
+
+/* Close button specifics */
+.closeBtn {
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+}
+
+/* Chevron arrows */
+.leftChevron,
+.rightChevron {
+  top: 45.5%;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+}
+.leftChevron { left: 0; transform: rotate(180deg); }
+.rightChevron { right: 0; }
+
+/* Counter text */
+.counter {
+  top: 15px;
+  left: 16px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 32px;
+  user-select: none;
+  text-shadow: 1px 1px 3px #4f4f4f;
+}
+
+.dragging,
+.dragging * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}

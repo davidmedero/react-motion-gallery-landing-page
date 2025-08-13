@@ -37,6 +37,11 @@ interface SliderProps {
   sliderX: RefObject<number>;
   sliderVelocity: RefObject<number>;
   thumbnails: any;
+  duplicateImgRef: RefObject<HTMLElement | null>;
+  closeButtonRef: RefObject<HTMLElement | null>;
+  counterRef: RefObject<HTMLElement | null>;
+  leftChevronRef: RefObject<HTMLElement | null>;
+  rightChevronRef: RefObject<HTMLElement | null>;
 }
 
 type CarouselChildProps =
@@ -90,7 +95,12 @@ const Slider = ({
   firstCellInSlide,
   sliderX,
   sliderVelocity,
-  thumbnails
+  thumbnails,
+  duplicateImgRef,
+  closeButtonRef,
+  counterRef,
+  leftChevronRef,
+  rightChevronRef
 }: SliderProps) => {
   const [firstChildWidth, setFirstChildWidth] = useState(0);
   const isPointerDown = useRef(false);
@@ -439,7 +449,7 @@ const Slider = ({
   }
 
   function setDraggingCursor(on: boolean) {
-    document.body.classList.toggle('rmg-dragging', on);
+    sliderContainer.current?.classList.toggle(styles.dragging, on);
   }
 
   function handlePointerStart(e: PointerEvent) {
@@ -1084,9 +1094,13 @@ const Slider = ({
     };
   }, []);
 
+  const shieldCleanupRef = useRef<null | (() => void)>(null);
+
   const SHIELD_TIMEOUT = 400;
 
   function addGestureShield() {
+    shieldCleanupRef.current?.();
+
     const shield = document.createElement('div');
     Object.assign(shield.style, {
       position: 'fixed',
@@ -1098,44 +1112,61 @@ const Slider = ({
     });
     document.body.appendChild(shield);
 
-    const remove = () => { shield.remove(); };
-    const timer = window.setTimeout(remove, SHIELD_TIMEOUT);
+    const remove = () => {
+      if (shield.parentNode) shield.remove();
+    };
 
-    return () => { window.clearTimeout(timer); remove(); };
+    const timer = window.setTimeout(() => {
+      remove();
+      shieldCleanupRef.current = null;
+    }, SHIELD_TIMEOUT);
+
+    const teardown = () => {
+      window.clearTimeout(timer);
+      remove();
+      shieldCleanupRef.current = null;
+    };
+
+    shieldCleanupRef.current = teardown;
+    return teardown;
   }
 
   function toggleFullscreen(
     e: React.PointerEvent<HTMLDivElement>,
-    imgRef: RefObject<HTMLImageElement | null>,
+    imgRef: React.RefObject<HTMLImageElement | null>,
     index: number
   ) {
     const origImg   = imgRef.current;
     const container = sliderContainer.current;
     if (!origImg || !container) return;
 
-    addGestureShield()
+    // create + remember shield cleanup
+    shieldCleanupRef.current?.();
+    shieldCleanupRef.current = addGestureShield();
 
-    // 1) Measure the thumbnail & compute "fullscreen" rect
+    // 1) Measure the thumbnail
     const imgRect = origImg.getBoundingClientRect();
 
-    // 2) Create all the nodes
-    const overlay  = document.createElement('div');
-    overlay.className   = 'fullscreen-overlay';
+    // 2) Create nodes and attach refs
+    const overlay = document.createElement('div');
+    overlay.className = styles.fullscreenOverlay;
     overlay.style.display = 'none';
     overlayDivRef.current = overlay;
 
     const dup = document.createElement('img');
-    dup.className        = 'duplicate-img';
-    dup.style.display    = 'none';
+    dup.className = styles.duplicateImg;
+    dup.style.display = 'none';
     dup.style.transformOrigin = '0 0';
+    duplicateImgRef.current = dup;
 
     const closeBtn = document.createElement('button');
-    closeBtn.type        = 'button';
-    closeBtn.className   = 'close-button';
+    closeBtn.type = 'button';
+    closeBtn.className = styles.closeBtn;
     closeBtn.style.display = 'none';
-    // build the “×” SVG
+    closeButtonRef.current = closeBtn;
+    // “×” SVG
     {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('width','35');
       svg.setAttribute('height','35');
       svg.setAttribute('viewBox','0 0 16 16');
@@ -1149,9 +1180,10 @@ const Slider = ({
     }
 
     const leftCh = document.createElement('div');
-    leftCh.className    = 'left-chevron';
+    leftCh.className = styles.leftChevron;
     leftCh.style.display = 'none';
-    // build left arrow SVG
+    leftChevronRef.current = leftCh;
+    // left arrow SVG
     {
       const svg  = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('width','50');
@@ -1167,9 +1199,10 @@ const Slider = ({
     }
 
     const rightCh = document.createElement('div');
-    rightCh.className    = 'right-chevron';
+    rightCh.className = styles.rightChevron;
     rightCh.style.display = 'none';
-    // build right arrow SVG
+    rightChevronRef.current = rightCh;
+    // right arrow SVG
     {
       const svg  = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('width','50');
@@ -1185,52 +1218,52 @@ const Slider = ({
     }
 
     const ctr = document.createElement('div');
-    ctr.className       = 'counter';
-    ctr.style.display   = 'none';
-    ctr.textContent     = `${index + 1} / ${imageCount}`;
+    ctr.className = styles.counter;
+    ctr.style.display = 'none';
+    ctr.textContent = `${index + 1} / ${imageCount}`;
+    counterRef.current = ctr;
 
-    // 3) Batch-append in one go
+    // 3) Append to DOM in one shot
     const frag = document.createDocumentFragment();
     frag.append(overlay, dup, closeBtn, leftCh, rightCh, ctr);
     document.body.appendChild(frag);
 
     // 4) Prepare the “before” state
     overlay.style.display = 'block';
-    overlay.classList.remove('open');
+    overlay.classList.remove(styles.open);
 
-    dup.src           = origImg.src;
+    dup.src = origImg.src;
     dup.style.display = 'block';
     dup.style.position = 'fixed';
-    dup.style.left    = `${imgRect.left}px`;
-    dup.style.top     = `${imgRect.top}px`;
-    dup.style.width   = `${imgRect.width}px`;
-    dup.style.height  = `${imgRect.height}px`;
+    dup.style.left = `${imgRect.left}px`;
+    dup.style.top = `${imgRect.top}px`;
+    dup.style.width = `${imgRect.width}px`;
+    dup.style.height = `${imgRect.height}px`;
     dup.style.transition = 'none';
 
-    // force reflow
+    // force reflow then restore transition
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     dup.offsetWidth;
-    // restore transition
     dup.style.transition = 'transform 0.3s cubic-bezier(.4,0,.22,1)';
 
     closeBtn.style.display = 'block';
-    closeBtn.classList.remove('open');
+    closeBtn.classList.remove(styles.open);
 
-    leftCh.style.display = imageCount > 1 ? 'block' : 'none';
-    leftCh.classList.remove('open');
+    leftCh.style.display  = imageCount > 1 ? 'block' : 'none';
+    leftCh.classList.remove(styles.open);
 
     rightCh.style.display = imageCount > 1 ? 'block' : 'none';
-    rightCh.classList.remove('open');
+    rightCh.classList.remove(styles.open);
 
-    ctr.style.display = imageCount > 1 ? 'block' : 'none';
-    ctr.classList.remove('open');
+    ctr.style.display     = imageCount > 1 ? 'block' : 'none';
+    ctr.classList.remove(styles.open);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     overlay.offsetWidth;
-
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     dup.offsetWidth;
 
+    // 5) Compute transform to center-fit
     const scaleX = window.innerWidth  / imgRect.width;
     const scaleY = window.innerHeight / imgRect.height;
     const s = Math.min(scaleX, scaleY);
@@ -1242,36 +1275,43 @@ const Slider = ({
     const targetTop  = (window.innerHeight - finalH) / 2;
 
     const dx = targetLeft - imgRect.left;
-    const dy = targetTop  - imgRect.top ;
+    const dy = targetTop  - imgRect.top;
 
+    // 6) Animate
     requestAnimationFrame(() => {
       dup.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
-      overlay.style.backgroundColor = "rgba(0,0,0,0.8)";
-      overlay.classList.add('open');
-      closeBtn.classList.add('open');
-      leftCh.classList.add('open');
-      rightCh.classList.add('open');
-      ctr.classList.add('open');
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
+      overlay.classList.add(styles.open);
+      closeBtn.classList.add(styles.open);
+      if (imageCount > 1) {
+        leftCh.classList.add(styles.open);
+        rightCh.classList.add(styles.open);
+        ctr.classList.add(styles.open);
+      }
     });
 
-    // 7) Cleanup when the fly-out finishes
-    dup.addEventListener('transitionend', function handler(e) {
-      if (e.propertyName !== 'transform') return;
-      dup.removeEventListener('transitionend', handler);
+    // 7) When the fly-out finishes, show the real slider
+    const onEnd = (ev: TransitionEvent) => {
+      if (ev.propertyName !== 'transform') return;
+      dup.removeEventListener('transitionend', onEnd);
       setShowFullscreenSlider(true);
-    }, { once: true });
+    };
+    dup.addEventListener('transitionend', onEnd, { once: true });
   }
 
   useLayoutEffect(() => {
     if (!showFullscreenSlider) return;
-    const duplicateImg = document.querySelector('.duplicate-img') as HTMLElement;
-
+    const dup = duplicateImgRef.current;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (!duplicateImg) return;
-        duplicateImg.remove();
-      })
-    })
+        if (!dup) return;
+        dup.remove();
+        duplicateImgRef.current = null;
+        // also drop the shield if it’s still up
+        shieldCleanupRef.current?.();
+        shieldCleanupRef.current = null;
+      });
+    });
   }, [showFullscreenSlider]);
 
   useEffect(() => {

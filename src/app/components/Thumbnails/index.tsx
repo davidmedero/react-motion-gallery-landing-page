@@ -138,6 +138,11 @@ export default function SliderWrapper({ items, urls }: Props) {
   const isZooming = useRef(false);
   const expandableImgRefs = useRef([]);
   const overlayDivRef = useRef<HTMLDivElement | null>(null);
+  const duplicateImgRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLElement | null>(null);
+  const counterRef = useRef<HTMLElement | null>(null);
+  const leftChevronRef = useRef<HTMLElement | null>(null);
+  const rightChevronRef = useRef<HTMLElement | null>(null);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
   const [wrappedItems, setWrappedItems] = useState<MediaItem[]>([]);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -1671,7 +1676,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           <div style={{ position: 'relative' }}>
             {/* Shimmer covers everything until ready */}
             {!isReady && <div className={styles.shimmerOverlay} aria-hidden />}
-            <div className={isReady && inView ? styles.fadeInActive : styles.fadeInStart} style={{ position: 'relative' }}>
+            <div className={`${styles.scope} ${isReady && inView ? styles.fadeInActive : styles.fadeInStart}`} style={{ position: 'relative' }}>
             {/* Left Column — Thumbnails */}
               <SimpleBarReact
                 forceVisible="y"
@@ -1753,6 +1758,11 @@ export default function SliderWrapper({ items, urls }: Props) {
                 sliderX={sliderX}
                 sliderVelocity={sliderVelocity}
                 thumbnails={thumbnails}
+                duplicateImgRef={duplicateImgRef}
+                closeButtonRef={closeButtonRef}
+                counterRef={counterRef}
+                leftChevronRef={leftChevronRef}
+                rightChevronRef={rightChevronRef}
               >
                 {normalizedItems.map((item, i) => {
                   if (item.kind === "video") {
@@ -1813,6 +1823,10 @@ export default function SliderWrapper({ items, urls }: Props) {
         sliderVelocity={sliderVelocity}
         isWrapping={isWrapping}
         wrappedItems={wrappedItems}
+        closeButtonRef={closeButtonRef}
+        counterRef={counterRef}
+        leftChevronRef={leftChevronRef}
+        rightChevronRef={rightChevronRef}
       >
         <FullscreenSlider
           ref={sliderApi}
@@ -1835,6 +1849,10 @@ export default function SliderWrapper({ items, urls }: Props) {
           plyrRefs={plyrRefs}
           plyrRef={plyrRef}
           closingModal={closingModal}
+          closeButtonRef={closeButtonRef}
+          counterRef={counterRef}
+          leftChevronRef={leftChevronRef}
+          rightChevronRef={rightChevronRef}
         >
           {normalizedItems.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
         </FullscreenSlider>
