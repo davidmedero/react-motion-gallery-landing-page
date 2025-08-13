@@ -1496,7 +1496,7 @@ const Slider = ({
                   isScrolling.current = false;
                   select(index);
                 }}
-                className={`pagination-dot ${isActive ? "active" : "inactive"}`}
+                className={`${styles.pagination_dot} ${isActive ? styles.active : styles.inactive}`}
               />
             );
           })}
