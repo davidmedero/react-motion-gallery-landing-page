@@ -203,6 +203,10 @@
 /* Local wrapper you apply around each SimpleBar instance */
 .scope {}
 
+.scope :global(.simplebar-scrollbar:before) {
+  background: rgb(96, 130, 182) !important;
+}
+
 /* Mobile size tweaks, but only inside this wrapper */
 @media (max-width: 535px) {
   .scope :global(.simplebar-scrollable-y) {

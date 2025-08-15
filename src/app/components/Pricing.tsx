@@ -5,7 +5,7 @@ export default function Pricing() {
   return (
     <section
       id="pricing"
-      className="py-16 text-[rgba(0,0,0,0.8)] bg-[#fff] flex justify-center lg:px-8 sm:px-6 px-4"
+      className="scroll-mt-8 py-16 text-[rgba(0,0,0,0.8)] bg-[#fff] flex justify-center lg:px-8 sm:px-6 px-4"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
         {/* $25 Plan */}

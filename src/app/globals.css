@@ -232,3 +232,39 @@ body::before {
 .pro__cta_pushable:focus:not(:focus-visible) {
   outline: none;
 }
+
+.simplebar-scrollbar:before {
+  background: rgb(96, 130, 182) !important;
+}
+
+@media(max-width: 535px) {
+  .simplebar-scrollable-y {
+    width: 100% !important;
+    height: 160px !important;
+  }
+}
+
+.simplebar-track {
+  pointer-events: auto !important;
+}
+
+.simplebar-scrollbar {
+  pointer-events: auto !important;
+  cursor: grab !important;
+}
+
+.simplebar-scrollbar:active {
+  cursor: grabbing !important;
+}
+
+.simplebar-height-auto-observer-wrapper {
+  pointer-events: auto !important;
+}
+
+.simplebar-placeholder {
+  pointer-events: auto !important;
+}
+
+.simplebar-height-auto-observer {
+  pointer-events: auto !important;
+}
