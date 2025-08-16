@@ -750,15 +750,10 @@ const Slider = ({
     let distance = -slides.current[index].target - sliderX.current;
 
     const containerWidth = slider.current.clientWidth;
-    const cellWidth = cells.current[0].element.clientWidth;
-
-    const childrenArray = Children.toArray(children);
-    const childCount = childrenArray.length;
-
-    const slideWidth = cellWidth * childCount;
+    const contentWidth   = sliderWidth.current || slider.current.scrollWidth;
 
     if (sliderWidth.current <= slider.current.clientWidth) {
-      distance = (containerWidth - slideWidth) / 2 - sliderX.current;
+      distance = (containerWidth - contentWidth) / 2 - sliderX.current;
     }
     const force = distance * attraction;
     applyForce(force);
@@ -1111,6 +1106,7 @@ const Slider = ({
       pointerEvents: 'auto',
     });
     document.body.appendChild(shield);
+    
 
     const remove = () => {
       if (shield.parentNode) shield.remove();
@@ -1264,14 +1260,16 @@ const Slider = ({
     dup.offsetWidth;
 
     // 5) Compute transform to center-fit
-    const scaleX = window.innerWidth  / imgRect.width;
+    const vw = document.documentElement.clientWidth;
+
+    const scaleX = vw / imgRect.width;
     const scaleY = window.innerHeight / imgRect.height;
     const s = Math.min(scaleX, scaleY);
 
     const finalW = imgRect.width  * s;
     const finalH = imgRect.height * s;
 
-    const targetLeft = (window.innerWidth  - finalW) / 2;
+    const targetLeft = (vw - finalW) / 2;
     const targetTop  = (window.innerHeight - finalH) / 2;
 
     const dx = targetLeft - imgRect.left;

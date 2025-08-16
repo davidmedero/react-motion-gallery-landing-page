@@ -287,52 +287,50 @@ export type MediaItem =
   label: 'Building blocks',
   items: [
     {
-      id: 'blocks-slider',
-      title: 'Slider (core track)',
-      content: (
-        <div className="space-y-3">
-          <p>The minimal draggable track. No fullscreen, no zoom — just a performant, wrapped (or not) carousel. Slide index is tracked via <code>slideStore.tsx</code>.</p>
-          <pre className="rounded-md bg-[#0a0a0a] text-white text-xs p-3 overflow-x-auto">
-            <code>{`'use client'
-import { useRef } from 'react'
-import Slider from './Slider'
-import styles from './index.module.css'
+  id: 'blocks-overview',
+  title: 'Overview',
+  content: (
+    <div className="space-y-4">
+      <p>
+        This library gives you three composable primitives for building premium media
+        experiences: an inline slider for on-page browsing, a fullscreen modal + slider
+        for immersive viewing, and gesture-driven zoom/pan/pinch. Use them standalone,
+        mix and match, or wire them together for a seamless gallery flow.
+      </p>
 
-export default function SliderWrapper({ items, urls }: Props) {
-  const isClick = useRef(false)
-  const isWrapping = useRef(false)
-  const slides = useRef<{ cells:{element:HTMLElement, index:number}[], target:number }[]>([])
-  const slider = useRef<HTMLDivElement|null>(null)
-  const selectedIndex = useRef(0)
-  const firstCellInSlide = useRef<HTMLElement|null>(null)
-  const sliderX = useRef(0)
-  const sliderVelocity = useRef(0)
+      <ul className="list-disc pl-5 text-sm space-y-1">
+        <li>
+          <strong>Inline Slider:</strong> smooth, physics-based free scroll with optional
+          grouping/wrapping, wheel/touch/pointer navigation, and responsive layouts.
+        </li>
+        <li>
+          <strong>Fullscreen Modal + Slider:</strong> fly-out transition from the
+          thumbnail, edge-to-edge media, chevrons/counter UI, swipe/drag navigation,
+          and smart wrapping that respects current index.
+        </li>
+        <li>
+          <strong>Zoom · Pan · Pinch:</strong> click/tap to zoom, two-finger pinch on touch
+          and trackpads, inertial panning, and safe bounds so images never “escape.”
+        </li>
+      </ul>
 
-  return (
-    <div className={styles.container}>
-      <Slider
-        imageCount={urls.length}
-        isClick={isClick}
-        isWrapping={isWrapping}
-        slides={slides}
-        slider={slider}
-        selectedIndex={selectedIndex}
-        firstCellInSlide={firstCellInSlide}
-        sliderX={sliderX}
-        sliderVelocity={sliderVelocity}
-      >
-        {urls.map((src, i) => (
-          <img key={i} src={src} className={styles.image} alt={String(i)} draggable="false" />
-        ))}
-      </Slider>
+      <h4 className="font-semibold">Compose it your way</h4>
+      <ul className="list-disc pl-5 text-sm space-y-1">
+        <li><em>Inline-only:</em> product carousels, logo rails, editorial strips.</li>
+        <li><em>Inline → Fullscreen:</em> tap a slide to enter an immersive viewer,
+          preserving the selected index.</li>
+        <li><em>Fullscreen-only:</em> open a media viewer from any trigger.</li>
+        <li><em>Zoom layer anywhere:</em> attach zoom/pan/pinch to any image element.</li>
+      </ul>
     </div>
   )
-}`}</code>
-          </pre>
-          <ul className="list-disc pl-5 text-sm">
-            <li><code>isWrapping</code> lets you toggle infinite looping yourself.</li>
-            <li>Children can be images, generated video posters, or any element.</li>
-          </ul>
+},
+    {
+      id: 'blocks-slider',
+      title: 'Inline Slider',
+      content: (
+        <div className="space-y-3">
+          <p>Slide index is tracked via <code>slideStore.tsx</code>. If you only want to use the inline slider with no fullscreen capabilities then refer to the Auto Scroll and Free Scroll components. Auto Scroll has wrapping logic while Free Scroll does not.</p>
         </div>
       )
     },
@@ -342,117 +340,7 @@ export default function SliderWrapper({ items, urls }: Props) {
       title: 'Fullscreen modal + fullscreen slider',
       content: (
         <div className="space-y-3">
-          <p>Use the fullscreen stack on its own (no base slider required) or together with the core slider. Slide index is tracked via <code>fullscreenSlideStore.tsx</code>. Overlay, close button, chevrons and counter are wired up via the toggleFullscreen function inside <code>Slider.tsx</code>.</p>
-          <pre className="rounded-md bg-slate-900 text-slate-100 text-xs p-3 overflow-x-auto">
-            <code>{`'use client'
-import { useMemo, useRef, useState } from 'react'
-import FullscreenModal from './FullscreenModal'
-import FullscreenSlider from './FullscreenSlider'
-
-export default function SliderWrapper({ items, urls }: Props) {
-  const [slideIndex, setSlideIndex] = useState(0);
-  const isClick = useRef(false);
-  const isZoomClick = useRef(false);
-  const imageRefs = useRef<React.RefObject<HTMLImageElement | null>[]>([]);
-  const [showFullscreenSlider, setShowFullscreenSlider] = useState(false);
-  const isWrapping = useRef(true);
-  const zoomedDuringWrap = useRef(false);
-  const sliderApi = useRef<FullscreenSliderHandle>(null);
-  const isZooming = useRef(false);
-  const expandableImgRefs = useRef([]);
-  const overlayDivRef = useRef<HTMLDivElement | null>(null);
-  const duplicateImgRef = useRef<HTMLElement | null>(null);
-  const closeButtonRef = useRef<HTMLElement | null>(null);
-  const counterRef = useRef<HTMLElement | null>(null);
-  const leftChevronRef = useRef<HTMLElement | null>(null);
-  const rightChevronRef = useRef<HTMLElement | null>(null);
-  const [showFullscreenModal, setShowFullscreenModal] = useState(false);
-  const [wrappedItems, setWrappedItems] = useState<MediaItem[]>([]);
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  const isZoomed = useSyncExternalStore(
-    scaleStore.subscribe,
-    scaleStore.getSnapshot,
-    scaleStore.getServerSnapshot
-  );
-  const zoomLevel = isZoomed ? 2 : 1;
-  const scaleRef = useRef(1);
-  const [closingModal, setClosingModal] = useState(false);
-  const isPinching = useRef(false);
-  const isTouchPinching = useRef(false);
-  const cells = useRef<{ element: HTMLElement, index: number }[]>([]);
-  const plyrRefs = useRef<(APITypes | null)[]>([]);
-  const plyrRef = useRef<(APITypes | null)[]>([]);
-
-  // Refs for the inline slider
-  const slides = useRef<{ cells: { element: HTMLElement, index: number }[], target: number }[]>([]);
-  const slider = useRef<HTMLDivElement | null>(null);
-  const visibleImagesRef = useRef(0);
-  const selectedIndex = useRef(0);
-  const firstCellInSlide = useRef<HTMLElement | null>(null);
-  const sliderX = useRef(0);
-  const sliderVelocity = useRef(0);
-
-  return (
-    <>
-      <FullscreenModal
-        open={open}
-        onClose={() => setOpen(false)}
-        isZoomClick={isZoomClick}
-        isClick={isClick}
-        isAnimating={isAnimating}
-        overlayDivRef={overlayDivRef}
-        zoomLevel={zoomLevel}
-        cells={cells}
-        setShowFullscreenSlider={setShowFullscreenSlider}
-        imageCount={urls.length}
-        setClosingModal={setClosingModal}
-        slides={slides}
-        slider={slider}
-        visibleImagesRef={visibleImagesRef}
-        selectedIndex={selectedIndex}
-        firstCellInSlide={firstCellInSlide}
-        sliderX={sliderX}
-        sliderVelocity={sliderVelocity}
-        isWrapping={isWrapping}
-        wrappedItems={wrappedItems}
-        closeButtonRef={closeButtonRef}
-        counterRef={counterRef}
-        leftChevronRef={leftChevronRef}
-        rightChevronRef={rightChevronRef}
-      >
-        <FullscreenSlider
-          imageCount={urls.length}
-          slideIndex={slideIndex}
-          isClick={isZoomClick}
-          isZoomed={isZoomed}
-          windowSize={windowSize}
-          show={open}
-          handleZoomToggle={handleZoomToggle as any}
-          imageRefs={imageRefs.current}
-          cells={cells}
-          isPinching={isPinching}
-          scale={scaleRef.current}
-          isTouchPinching={isTouchPinching}
-          showFullscreenSlider={showFullscreenSlider}
-          isWrapping={isWrapping}
-          zoomedDuringWrap={zoomedDuringWrap}
-          isZooming={isZooming}
-          plyrRefs={plyrRefs}
-          plyrRef={plyrRef}
-          closingModal={closingModal}
-          closeButtonRef={closeButtonRef}
-          counterRef={counterRef}
-          leftChevronRef={leftChevronRef}
-          rightChevronRef={rightChevronRef}
-        >
-          {normalizedItems.length > 1 ? wrappedFullscreenItems : oneFullscreenItem}
-        </FullscreenSlider>
-      </FullscreenModal>
-    </>
-  )
-}`}</code>
-          </pre>
-          <p className="text-sm opacity-80">You can open this from any trigger (button, thumbnail click, etc.). </p>
+          <p>Slide index is tracked via <code>fullscreenSlideStore.tsx</code>. Overlay, close button, chevrons and counter are wired up via the <code>toggleFullscreen</code> function inside <code>Slider.tsx</code>.</p>
 
           <p>All components have identical <code>FullscreenModal.tsx</code> and <code>FullscreenSlider.tsx</code> files with the exception of the <code>Hero</code> component which sets <code>sliderX</code> inside <code>FullscreenModal.tsx</code> differently due to center cell alignment.</p>
           <pre className="rounded-lg bg-[#0a0a0a] text-white p-3 overflow-auto text-xs">
@@ -500,8 +388,6 @@ export default function SliderWrapper({ items, urls }: Props) {
       <h4 className="font-semibold">Pan (when zoomed)</h4>
       <ul className="list-disc pl-5 text-sm">
         <li>Initiated with <code>handlePanPointerStart(e, imageRef)</code> on the fullscreen image container.</li>
-        <li>Only active when <code>isZoomed</code> and <code>isPointerDown.current</code> are true.</li>
-        <li>Applies Panning (translate) transforms to <code>x & y.current</code></li>
       </ul>
 
       <h4 className="font-semibold">Pinch zoom (touch & trackpad)</h4>
@@ -512,67 +398,9 @@ export default function SliderWrapper({ items, urls }: Props) {
 
       <h4 className="font-semibold">Slide changes</h4>
       <ul className="list-disc pl-5 text-sm">
-        <li>On <code>slideIndexSync</code> change the zoom state is reset: <code>scaleStore.setScale(1)</code>, <code>scaleRef.current = 1</code>, <code>panRef.current = {'{ x: 0, y: 0 }'}</code>, and <code>transform</code> is restored to <code>translate(0, 0) scale(1)</code>.</li>
+        <li>On <code>slideIndexSync</code> change the zoom state is reset.</li>
       </ul>
-
-      <h4 className="font-semibold mt-4">Refs used:</h4>
-      <pre className="rounded-lg bg-[#0a0a0a] text-white p-3 overflow-auto text-xs">
-        <code>{`const isClick = useRef(false);
-const isZoomClick = useRef(false);
-const imageRefs = useRef<React.RefObject<HTMLImageElement | null>[]>([]);
-const zoomedDuringWrap = useRef(false);
-const sliderApi = useRef<FullscreenSliderHandle>(null);
-const prevTimeRef = useRef(0);
-const FPS = 60;
-const MS_PER_FRAME = 1000 / FPS;
-const isZooming = useRef(false);
-const expandableImgRefs = useRef([]);
-const [wrappedItems, setWrappedItems] = useState<MediaItem[]>([]);
-const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-const isZoomed = useSyncExternalStore(
-  scaleStore.subscribe,
-  scaleStore.getSnapshot,
-  scaleStore.getServerSnapshot
-);
-const zoomLevel = isZoomed ? 2 : 1;
-const scaleRef = useRef(1);
-const panRef   = useRef({ x: 0, y: 0 });
-const previousZoom = useRef({ x: 0, y: 0 });
-const slideIndexSync = useSlideIndex();
-const changingSlides = useRef(false);
-const clickScale = 2.5;
-const friction = 0.15;
-const attraction = 0.015;
-const isPointerDown = useRef(false);
-const currentImage = useRef<HTMLElement | null>(null);
-const dragStartPositionX = useRef(0);
-const dragStartPositionY = useRef(0);
-const x = useRef(0);
-const y = useRef(0);
-const dragX = useRef(0);
-const dragY = useRef(0);
-const dragThreshold = 5;
-const startX = useRef(0);
-const startY = useRef(0);
-const velocityX = useRef(0);
-const velocityY = useRef(0);
-const isAnimating = useRef(false);
-const restingFrames = useRef(0);
-const lastForceX = useRef(0);
-const lastForceY = useRef(0);
-const zoomX = useRef(0);
-const zoomY = useRef(0);
-const zoomOffset = useRef(0);
-const zoomIncreaseDiff = useRef(0);
-const aspectRatioRef = useRef(1);
-const isScrolling = useRef(false);
-const isPinching = useRef(false);
-const startDist = useRef(0);
-const startScale = useRef(1);
-const isTouchPinching = useRef(false);
-const cells = useRef<{ element: HTMLElement, index: number }[]>([]);`}</code>
-      </pre>
-
+      
       
     </div>
   )
@@ -1128,59 +956,13 @@ if (selectedIndex.current === 0 && wrapBound) {
   {
     label: 'Behavior',
     items: [
-      { id: 'behavior-draggable', title: 'draggable', content: <p>Toggle dragging.</p> },
-      { id: 'behavior-freeScroll', title: 'freeScroll', content: <p>Free momentum scrolling.</p> },
       { id: 'behavior-wrapAround', title: 'wrapAround', content: <p>Infinite looping.</p> },
-      { id: 'behavior-groupCells', title: 'groupCells', content: <p>Group cells per slide.</p> },
-      { id: 'behavior-autoPlay', title: 'autoPlay', content: <p>Autoplay configuration.</p> },
-      { id: 'behavior-fullscreen', title: 'fullscreen', content: <p>Enter/exit fullscreen.</p> },
-      { id: 'behavior-fade', title: 'fade', content: <p>Cross-fade slides.</p> },
-      { id: 'behavior-adaptiveHeight', title: 'adaptiveHeight', content: <p>Match slide height.</p> },
-      { id: 'behavior-watchCSS', title: 'watchCSS', content: <p>Enable via CSS media queries.</p> },
-      { id: 'behavior-asNavFor', title: 'asNavFor', content: <p>Sync as navigation for another slider.</p> },
-      { id: 'behavior-hash', title: 'hash', content: <p>Hash-based navigation.</p> },
       { id: 'behavior-dragThreshold', title: 'dragThreshold', content: <p>Pixels before drag starts.</p> },
       { id: 'behavior-attraction-friction', title: 'selectedAttraction & friction', content: <p>Tweak spring physics.</p> },
       { id: 'behavior-freeScrollFriction', title: 'freeScrollFriction', content: <p>Friction while free scrolling.</p> },
     ]
-  },
-  {
-    label: 'Images',
-    items: [
-      { id: 'images-imagesLoaded', title: 'imagesLoaded', content: <p>Wait for images before layout.</p> },
-      { id: 'images-lazyLoad', title: 'lazyLoad', content: <p>Defer image loading.</p> },
-      { id: 'images-bgLazyLoad', title: 'bgLazyLoad', content: <p>Lazy-load CSS background images.</p> },
-    ]
-  },
-  {
-    label: 'Setup',
-    items: [
-      { id: 'setup-cellSelector', title: 'cellSelector', content: <p>Query selector for cells.</p> },
-      { id: 'setup-initialIndex', title: 'initialIndex', content: <p>Start at a specific slide.</p> },
-      { id: 'setup-accessibility', title: 'accessibility', content: <p>ARIA / keyboard options.</p> },
-      { id: 'setup-setGallerySize', title: 'setGallerySize', content: <p>Auto size the gallery.</p> },
-      { id: 'setup-resize', title: 'resize', content: <p>Respond to viewport changes.</p> },
-    ]
-  },
-  {
-    label: 'Cell position',
-    items: [
-      { id: 'pos-cellAlign', title: 'cellAlign', content: <p>Left/center/right alignment.</p> },
-      { id: 'pos-contain', title: 'contain', content: <p>Contain cells within bounds.</p> },
-      { id: 'pos-percentPosition', title: 'percentPosition', content: <p>Percent-based transforms.</p> },
-      { id: 'pos-rightToLeft', title: 'rightToLeft', content: <p>RTL layout.</p> },
-    ]
-  },
-  {
-    label: 'UI',
-    items: [
-      { id: 'ui-prevNextButtons', title: 'prevNextButtons', content: <p>Arrow buttons visibility.</p> },
-      { id: 'ui-pageDots', title: 'pageDots', content: <p>Pagination dots.</p> },
-      { id: 'ui-arrowShape', title: 'arrowShape', content: <p>Custom SVG arrow path.</p> },
-    ]
-  },
+  }
 ], []);
-
 
   const leaves: Leaf[] = useMemo(() => groups.flatMap(g => g.items), [groups]);
   const [activeId, setActiveId] = useState<string>(leaves[0]?.id);

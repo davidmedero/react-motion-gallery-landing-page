@@ -1,7 +1,7 @@
 .container {
   height: 606px;
   max-height: 606px;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .columns_container {

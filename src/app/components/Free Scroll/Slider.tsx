@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useRef, useEffect, ReactNode, cloneElement, Children, useState, createRef, Dispatch, SetStateAction, ReactElement, HTMLAttributes, ClassAttributes, RefObject, useLayoutEffect, useSyncExternalStore, isValidElement } from "react";
-import slideStore from './slideStore';
+import { useRef, useEffect, ReactNode, Children, useState, ReactElement, RefObject, useLayoutEffect, isValidElement, useSyncExternalStore} from "react";
 import styles from './Slider.module.css';
+import slideStore from './slideStore';
 
 function useSlideIndex() {
   return useSyncExternalStore(
@@ -17,77 +17,24 @@ interface SliderProps {
   children: ReactNode;
   imageCount: number;
   isClick: RefObject<boolean>;
-  expandableImgRefs: RefObject<RefObject<HTMLImageElement | null>[]>;
-  overlayDivRef: RefObject<HTMLDivElement | null>;
-  setSlideIndex: (index: number) => void;
-  setShowFullscreenModal: (show: boolean) => void;
-  setShowFullscreenSlider: Dispatch<SetStateAction<boolean>>;
-  showFullscreenSlider: boolean;
-  isWrapping: RefObject<boolean>;
   slides: RefObject<{ cells: { element: HTMLElement, index: number }[], target: number }[]>;
   slider: RefObject<HTMLDivElement | null>;
-  visibleImagesRef: RefObject<number>;
   selectedIndex: RefObject<number>;
   firstCellInSlide: RefObject<HTMLElement | null>;
   sliderX: RefObject<number>;
   sliderVelocity: RefObject<number>;
-  duplicateImgRef: RefObject<HTMLElement | null>;
-  closeButtonRef: RefObject<HTMLElement | null>;
-  counterRef: RefObject<HTMLElement | null>;
-  leftChevronRef: RefObject<HTMLElement | null>;
-  rightChevronRef: RefObject<HTMLElement | null>;
-}
-
-type CarouselChildProps =
-  HTMLAttributes<HTMLElement> &
-  ClassAttributes<HTMLElement> & {
-    style?: React.CSSProperties
-  }
-
-function cloneSlide(
-  child: ReactElement<any>,
-  key: string,
-  elementIndex: number,
-  cells: React.RefObject<
-    { element: HTMLElement; index: number }[]
-  >
-): ReactElement<CarouselChildProps> {
-  return cloneElement<CarouselChildProps>(child, {
-    key,
-    ref: (el: HTMLElement | null) => {
-      if (el && !cells.current.some(c => c.element === el)) {
-        cells.current.push({ element: el, index: elementIndex })
-      }
-    },
-    style: {
-      ...child.props.style,
-    },
-  })
 }
 
 const Slider = ({
   children,
   imageCount,
   isClick,
-  expandableImgRefs,
-  overlayDivRef,
-  setSlideIndex,
-  setShowFullscreenModal,
-  setShowFullscreenSlider,
-  showFullscreenSlider,
-  isWrapping,
   slides,
   slider,
-  visibleImagesRef,
   selectedIndex,
   firstCellInSlide,
   sliderX,
-  sliderVelocity,
-  duplicateImgRef,
-  closeButtonRef,
-  counterRef,
-  leftChevronRef,
-  rightChevronRef
+  sliderVelocity
 }: SliderProps) => {
   const isPointerDown = useRef(false);
   const startX = useRef(0);
@@ -101,30 +48,32 @@ const Slider = ({
   const restingFrames = useRef(0);
   const sliderWidth = useRef(0);
   const isScrolling = useRef(false);
-  const [clonedChildren, setClonedChildren] = useState<React.ReactElement[]>([]);
-  const clonesCountRef = useRef(0);
   const [visibleImages, setVisibleImages] = useState(1);
   const friction = 0.28;
+  const freeScrollFriction = 0.075
+  const boundsAttraction = 0.015;
   const attraction = 0.025;
-  const cells = useRef<{ element: HTMLElement, index: number }[]>([]);
-  const isDragSelect = useRef<boolean>(false);
   // const progressFillRef = useRef<HTMLDivElement>(null);
   const isClosing = useRef(false);
   const slideIndexSync = useSlideIndex();
   const sliderContainer = useRef<HTMLDivElement | null>(null);
   const hasPositioned = useRef<boolean>(false);
   const [slidesState, setSlidesState] = useState<{ cells: { element: HTMLElement }[] }[]>([]);
-  const [allImagesLoaded, setAllImagesLoaded] = useState(false);
-  const prevTimeRef = useRef(0);
-  const FPS = 60;
-  const MS_PER_FRAME = 1000 / FPS;
   const prevButtonRef = useRef<HTMLDivElement>(null);
   const nextButtonRef = useRef<HTMLDivElement>(null);
   const dotRefs = useRef<(HTMLDivElement | null)[]>([]);
   const dotsContainerRef = useRef<HTMLDivElement | null>(null);
+  const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+  const prevTimeRef = useRef(0);
+  const FPS = 60;
+  const MS_PER_FRAME = 1000 / FPS;
   const [isMeasured, setIsMeasured]   = useState(false);   // widths positioned
   const [isReady, setIsReady]         = useState(false);   // fully ready to show
   const [inView, setInView]           = useState(false);   // IO has fired
+  const lastForceX = useRef(0);
+  const isFreeScrolling = useRef(false);
+  const [layoutEpoch, setLayoutEpoch] = useState(0);
+  const lastWidthRef = useRef(0);
 
   useEffect(() => {
     const container = slider.current;
@@ -161,10 +110,10 @@ const Slider = ({
         img.removeEventListener('error', onImgLoad);
       });
     };
-  }, [children, clonedChildren, visibleImages]);
+  }, [children, visibleImages]);
 
   useLayoutEffect(() => {
-    if (!slider.current || cells.current.length === 0 || hasPositioned.current || sliderWidth.current === 0 || !slides.current || !slides.current[0] || !slides.current[0].cells[0]?.element) return;
+    if (!slider.current || hasPositioned.current || sliderWidth.current === 0 || !slides.current || !slides.current[0] || !slides.current[0].cells[0]?.element) return;
     firstCellInSlide.current = slides.current[0].cells[0]?.element;
     const containerWidth = slider.current.clientWidth;
     if (sliderWidth.current <= slider.current.clientWidth) {
@@ -173,111 +122,41 @@ const Slider = ({
     }
     hasPositioned.current = true;
   }, [slidesState]);
-  
-  useEffect(() => {
-    const el = slider.current;
-    if (!el) return;
-
-    function handleResize() {
-      const raw = Children
-        .toArray(children)
-        .filter(isValidElement) as ReactElement<any>[];
-      const n = raw.length - 1;
-
-      const per  = visibleImages;
-      const wrap = n > per;
-
-      isWrapping.current     = wrap;
-      clonesCountRef.current = wrap ? per : 0;
-
-      cells.current = [];
-      const slides: ReactElement<any>[] = [];
-
-      if (wrap) {
-        slides.push(
-          ...raw.slice(-per).map((c, i) =>
-            cloneSlide(c, `before-${i}`, -per + i, cells)
-          )
-        );
-      }
-
-      slides.push(
-        ...raw.map((c, i) =>
-          cloneSlide(c, `original-${i}`, i, cells)
-        )
-      );
-
-      if (wrap) {
-        slides.push(
-          ...raw.slice(0, per).map((c, i) =>
-            cloneSlide(c, `after-${i}`, i, cells)
-          )
-        );
-      }
-
-      setClonedChildren(slides);
-    }
-
-    const observer = new ResizeObserver(() => {
-      handleResize();
-    });
-
-    observer.observe(el);
-
-    handleResize();
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [children, visibleImages, allImagesLoaded]);
 
   useEffect(() => {
     const el = slider.current;
     if (!el) return;
 
     function handleResize() {
-      if (!el || cells.current.length === 0) return;
+      if (!el) return;
 
-      const raw = Children
-        .toArray(children)
-        .filter(isValidElement) as ReactElement<any>[];
+      const cw = el.clientWidth;
+      if (cw !== lastWidthRef.current) {
+        lastWidthRef.current = cw;
+        setLayoutEpoch(e => e + 1);     // 🔑 force re-measure/rebuild on any width change
+      }
+
+      const raw = Children.toArray(children).filter(isValidElement) as ReactElement<any>[];
       const n = raw.length - 1;
       if (n < 1) return;
 
-      const allEls    = Array.from(el.children) as HTMLElement[];
-      const cCount    = clonesCountRef.current;
-      const originals = allEls.slice(cCount, allEls.length - cCount);
-
-      const cw    = el.clientWidth;
+      const allEls = Array.from(el.children) as HTMLElement[];
       let sum = 0, count = 0;
-      for (const slot of originals) {
+      for (const slot of allEls) {
         const w = slot.getBoundingClientRect().width;
-        if (sum + w <= cw) {
-          sum += w;
-          count++;
-        } else {
-          count++;
-          break;
-        }
+        if (sum + w <= cw) { sum += w; count++; }
+        else { count++; break; }
       }
 
       const clamped = Math.max(2, Math.min(n, count));
       setVisibleImages(clamped);
-      visibleImagesRef.current = clamped;
     }
 
-    const observer = new ResizeObserver(() => {
-      handleResize();
-    });
-
+    const observer = new ResizeObserver(handleResize);
     observer.observe(el);
-
     handleResize();
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [children, clonedChildren]);
+    return () => observer.disconnect();
+  }, [children]);
 
   useEffect(() => {
     const GAP = 0;
@@ -311,25 +190,16 @@ const Slider = ({
         sl.style.width = `${widths[i]}px`;
       });
 
-      const clonesBefore = clonesCountRef.current;
-      const beforeWidths = widths.slice(0, clonesBefore);
-      let runningX = -(
-        beforeWidths.reduce((sum, w) => sum + w, 0)
-        + GAP * clonesBefore
-      );
+      let runningX = 0; // <-- start at 0 (not -totalWidth)
 
       slides.forEach((sl, i) => {
         sl.style.transform = `translateX(${runningX}px)`;
         runningX += widths[i] + GAP;
       });
 
-      // recompute total width for wrap logic
-      const origWidths = widths.slice(
-        clonesBefore,
-        widths.length - clonesBefore
-      );
-      sliderWidth.current = origWidths.reduce((sum, w) => sum + w, 0) 
-      + GAP * origWidths.length;
+      sliderWidth.current =
+        widths.reduce((sum, w) => sum + w, 0) + GAP * Math.max(0, widths.length - 1);
+
     }
 
     requestAnimationFrame(measureAndPosition);
@@ -338,17 +208,16 @@ const Slider = ({
 
     return () => { canceled = true; };
 
-  }, [clonedChildren, visibleImages]);
+  }, [children, visibleImages, layoutEpoch]);
 
   useEffect(() => {
     const ready =
       allImagesLoaded &&
-      clonedChildren.length > 0 &&
       slidesState.length > 0 &&
       isMeasured;
 
     if (ready) setIsReady(true);
-  }, [allImagesLoaded, clonedChildren.length, slidesState.length, isMeasured]);
+  }, [allImagesLoaded, slidesState.length, isMeasured]);
 
   useEffect(() => {
     if (!isReady || !sliderContainer.current) return;
@@ -379,8 +248,6 @@ const Slider = ({
     // how many clones on each side?
     const rawKids = Children.toArray(children).filter(isValidElement);
     const childCount = rawKids.length;
-    const clonesBefore = isWrapping.current ? visibleImages : 0;
-    const clonesAfter = clonesBefore;
 
     const cw = containerEl.getBoundingClientRect().width;
 
@@ -390,14 +257,13 @@ const Slider = ({
 
       // slice out just the originals
       const allEls = Array.from(containerEl.children) as HTMLElement[];
-      const originals = allEls.slice(clonesBefore, allEls.length - clonesAfter);
 
       const idxMap = new Map<HTMLElement, number>(
-        originals.map((el, i) => [el, i])
+        allEls.map((el, i) => [el, i])
       );
 
       // map to { el, left, right }
-      const data = originals.map(el => {
+      const data = allEls.map(el => {
         const r = el.getBoundingClientRect();
         return {
           el,
@@ -421,12 +287,12 @@ const Slider = ({
 
         if (j === i) j++;
 
-        const slice = originals.slice(i, j);
+        const slice = allEls.slice(i, j);
 
         const isLast = j >= childCount;
         let target = startLeft;   
         
-        if (isLast && !isWrapping.current) {
+        if (isLast) {
           target = sliderWidth.current - cw
         }
 
@@ -445,7 +311,7 @@ const Slider = ({
       }));
 
       // trigger RAF‑retry if slides came out broken
-      if (newSlides[1] && newSlides[1].target === 0 || (isWrapping.current && newSlides.length === 1)) {
+      if ((newSlides[1] && newSlides[1].target === 0)) {
         requestAnimationFrame(buildPages);
         return;
       }
@@ -459,48 +325,7 @@ const Slider = ({
 
     return () => { canceled = true; };
 
-  }, [children, clonedChildren, visibleImages, isWrapping.current]);
-
-  useEffect(() => {
-    if (!slider.current) return;
-  
-    const childrenArray = Children.toArray(children);
-
-    const imgOffset = !isWrapping.current ? 0 : visibleImages * 2;
-    if (clonedChildren.length !== Children.toArray(children).length + imgOffset) return;
-  
-    // 🔹 Step 2: Clear existing refs before creating new ones
-    expandableImgRefs.current = [];
-  
-    // 🔹 Step 3: Create new refs
-    expandableImgRefs.current = Array(childrenArray.length + imgOffset)
-      .fill(null)
-      .map(() => createRef<HTMLImageElement>());
-  
-    const images = slider.current.querySelectorAll("img");
-  
-    images.forEach((img, index) => {
-      if (expandableImgRefs.current[index]) {
-        expandableImgRefs.current[index].current = img;
-      }
-    });
-  
-    // 🔹 Step 4: Cleanup function to remove event listeners & reset refs
-    return () => {
-      expandableImgRefs.current = [];
-    };
-  
-  }, [children, clonedChildren, visibleImages, isWrapping.current]);
-
-  useEffect(() => {
-    if (!slider.current || cells.current.length === 0 || sliderWidth.current === 0 || !slides.current || !slides.current[0].cells[0]?.element) return;
-    firstCellInSlide.current = slides.current[0].cells[0]?.element;
-    const containerWidth = slider.current.clientWidth;
-    if (sliderWidth.current <= slider.current.clientWidth) {
-      sliderX.current = (containerWidth - sliderWidth.current) / 2;
-      positionSlider();
-    }
-  }, [slidesState]);
+  }, [children, visibleImages, layoutEpoch]);
 
   interface PointerEvent extends MouseEvent {
     touches?: Array<{
@@ -515,7 +340,6 @@ const Slider = ({
 
   function handlePointerStart(e: PointerEvent) {
     if (!slider.current) return;
-
     const hit = (e.target as Node);
 
     if (prevButtonRef.current?.contains(hit)) {
@@ -528,10 +352,6 @@ const Slider = ({
 
     const dotIndex = dotRefs.current.findIndex(dot => dot?.contains(hit));
     if (dotIndex >= 0) {
-      return;
-    }
-
-    if (dotsContainerRef.current?.contains(hit)) {
       return;
     }
 
@@ -560,10 +380,10 @@ const Slider = ({
 
   function startAnimation() {
     if (isAnimating.current) return;
-
+    
     isAnimating.current = true;
     restingFrames.current = 0;
-    prevTimeRef.current = performance.now();
+    prevTimeRef.current    = performance.now();
     requestAnimationFrame(animate);
   };
 
@@ -601,6 +421,7 @@ const Slider = ({
   
     const dragVelocity = dragX.current - sliderX.current;
     const dragForce = dragVelocity - sliderVelocity.current;
+    lastForceX.current = dragForce;
     applyForce(dragForce);
   };
 
@@ -614,16 +435,13 @@ const Slider = ({
   };
 
   function getFrictionFactor() {
-    return 1 - friction;
+    const frictionValue = isFreeScrolling.current === true ? freeScrollFriction : friction
+    return 1 - frictionValue;
   }
 
   function positionSlider() {
     if (!slider.current) return;
-    let currentPosition = sliderX.current;
-    if (!isClick.current && isWrapping.current === true) {
-      currentPosition = ((currentPosition % sliderWidth.current) + sliderWidth.current) % sliderWidth.current;
-      currentPosition += -sliderWidth.current;
-    }
+    const currentPosition = sliderX.current;
     setTranslateX(currentPosition);
   };
 
@@ -639,34 +457,12 @@ const Slider = ({
     if (restingFrames.current > 2) {
       isAnimating.current = false;
       restingFrames.current = 0;
+      isFreeScrolling.current = false;
 
       if (!slider.current) return;
       positionSlider();
     }
   };
-
-  const SPEED_DELAY = 3000; // 3s between slides
-  const RESUME_DELAY = 1000; // 1s after pointer up
-  const lastPointerUpTime = useRef<number>(performance.now() - 1000);
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      const now = performance.now();
-      if (
-        isPointerDown.current ||
-        showFullscreenSlider ||
-        !isWrapping.current
-      ) {
-        return;
-      }
-      if (now - lastPointerUpTime.current < RESUME_DELAY) return;
-      next();
-    }, SPEED_DELAY);
-
-    return () => {
-      window.clearInterval(id);
-    };
-  }, [showFullscreenSlider, slidesState, slideIndexSync, allImagesLoaded, clonedChildren, isWrapping.current]);
 
   function setTranslateX(x: number) {
     if (!slider.current) return;
@@ -715,19 +511,17 @@ const Slider = ({
 
     dragX.current = dragStartPosition.current + moveX;
 
-    if (!isWrapping.current) {
-      const originBound = Math.max(0, dragStartPosition.current);
+    const originBound = Math.max(0, dragStartPosition.current);
 
-      if (dragX.current > originBound) {
-        dragX.current = (dragX.current + originBound) * 0.5;
-      }
+    if (dragX.current > originBound) {
+      dragX.current = (dragX.current + originBound) * 0.5;
+    }
 
-      const lastSlide = sliderWidth.current <= slider.current.clientWidth ? -(slider.current.clientWidth - sliderWidth.current) / 2 : slides.current[slides.current.length - 1].target;
-      const endBound = Math.min(-lastSlide, dragStartPosition.current);
+    const lastSlide = sliderWidth.current <= slider.current.clientWidth ? -(slider.current.clientWidth - sliderWidth.current) / 2 : slides.current[slides.current.length - 1].target;
+    const endBound = Math.min(-lastSlide, dragStartPosition.current);
 
-      if (dragX.current < endBound) {
-        dragX.current = (dragX.current + endBound) * 0.5;
-      }
+    if (dragX.current < endBound) {
+      dragX.current = (dragX.current + endBound) * 0.5;
     }
 
     if (Math.abs(moveX) > dragThreshold || Math.abs(moveY) > dragThreshold) {
@@ -736,112 +530,31 @@ const Slider = ({
 
     dragMoveTime.current = new Date();
   };
-  
-  type PointerEndEvent = MouseEvent;
 
-  function handlePointerEnd(e: PointerEndEvent) {
-    if (!slider.current || !isPointerDown.current) return;
-    isPointerDown.current = false;
-
-    if (sliderWidth.current <= slider.current.clientWidth) {
-      select(0);
-    }
-
-    let index = dragEndRestingSelect();
-
-    if (isClick.current) {
-      isClosing.current = true;
-
-      const targetImg = (e.target as HTMLElement)
-        .closest("img") as HTMLImageElement | null;
-      if (!targetImg) return;
-
-      const parsedImgIndex = expandableImgRefs.current.findIndex(
-        (ref) => ref.current === targetImg
-      );
-      if (parsedImgIndex < 0) return;
-
-      const originalIndex =
-        ((parsedImgIndex - visibleImagesRef.current) % imageCount + imageCount) %
-        imageCount;
-      const fullscreenIndex = originalIndex + 1;
-      const finalIndex = !isWrapping.current
-        ? parsedImgIndex
-        : fullscreenIndex;
-
-      setShowFullscreenModal(true);
-      toggleFullscreen(
-        e as unknown as React.PointerEvent<HTMLDivElement>,
-        expandableImgRefs.current[parsedImgIndex],
-        finalIndex
-      );
-      setSlideIndex(finalIndex);
-    } else {
-      if (!isWrapping.current) {
-        if (index === selectedIndex.current) {
-          index += dragEndBoostSelect();
-        }
-      } else {
-        if (
-          index === selectedIndex.current ||
-          (index === slides.current.length && selectedIndex.current === 0)
-        ) {
-          index += dragEndBoostSelect();
-        }
-      }
-    }
-
-    isDragSelect.current = true;
-    select(index);
-    isDragSelect.current = false;
-    setDraggingCursor(false);
-  }
-
-  useEffect(() => {
-    const clear = () => setDraggingCursor(false);
-    window.addEventListener('pointercancel', clear);
-    window.addEventListener('blur', clear);
-    return () => {
-      window.removeEventListener('pointercancel', clear);
-      window.removeEventListener('blur', clear);
-    };
-  }, []);
-
-  function dragEndBoostSelect() {
-    const movedAt = dragMoveTime.current;
-    if (
-      (!movedAt ||
-      (new Date().getTime() - movedAt.getTime()) > 100) && isWrapping.current === true
-    ) {
-      return 0;
-    }
-  
-    const delta = previousDragX.current - dragX.current;
-
-    if (delta > 0) {
-      return 1;
-    } else if (delta < 0) {
-      return -1;
-    };
-    return 0;
-  };
-
-  function applySelectedAttraction() {
-    if (isPointerDown.current) return;
+  function handlePointerEnd() {
     if (!slider.current) return;
+    if (!isPointerDown.current) return;
+    isPointerDown.current = false;
+    isFreeScrolling.current = true;
 
-    const index = selectedIndex.current >= slides.current.length - 1 && slides.current[slides.current.length - 1].target === sliderWidth.current ? 0 : selectedIndex.current;
+    const forceThreshold = 0.1;
 
-    let distance = -slides.current[index].target - sliderX.current;
-
-    const containerWidth = slider.current.clientWidth;
-
-    if (sliderWidth.current <= slider.current.clientWidth) {
-      distance = (containerWidth - sliderWidth.current) / 2 - sliderX.current;
+    if (
+      Math.abs(lastForceX.current) > forceThreshold &&
+      Math.abs(sliderVelocity.current) === 0
+    ) {
+      applyForce(-lastForceX.current);
+      startAnimation();
     }
-    const force = distance * attraction;
-    applyForce(force);
-  }
+  
+    lastForceX.current = 0;
+
+    const index = dragEndRestingSelect();
+
+    select(index);
+
+    setDraggingCursor(false);
+  };
 
   function dragEndRestingSelect() {
     const restingX = getRestingPosition();
@@ -855,29 +568,19 @@ const Slider = ({
       positiveResting.index : negativeResting.index;
   };
 
-  function getRestingPosition() {
-    return sliderX.current + sliderVelocity.current / (1 - getFrictionFactor());
-  };
-
   function getSlideDistance(x: number, index: number) {
     if (!slider.current) return 1;
-    const length = slides.current[slides.current.length - 1].target === sliderWidth.current || !isWrapping.current ? slides.current.length - 1 : slides.current.length;
-    const slideIndex = ((index % length) + length) % length;
-    const slide = slides.current[slideIndex];
+    const slide = slides.current[index];
     if (!slide) return null;
-    let wrap = sliderWidth.current * Math.floor(index/length);
-    if (sliderWidth.current <= slider.current.clientWidth || !isWrapping.current) {
-      wrap = 0;
-    }
 
-    return x - (slide.target + wrap);
+    return x - slide.target;
   };
 
   function getClosestResting(restingX: number, distance: number, increment: number) {
     let index = selectedIndex.current;
     let minDistance = Infinity;
   
-    while (distance < minDistance) {
+    while (distance <= minDistance) {
       index += increment;
       minDistance = distance;
       distance = getSlideDistance(-restingX, index) ?? Infinity;
@@ -892,28 +595,58 @@ const Slider = ({
     };
   };
 
+  function getRestingPosition() {
+    return sliderX.current + sliderVelocity.current / (1 - getFrictionFactor());
+  };
+
+  function applySelectedAttraction() {
+    if (isPointerDown.current) return;
+    if (!slider.current) return;
+
+    if (isFreeScrolling.current) {
+      const restingX = getRestingPosition();
+
+      if (-sliderX.current < slides.current[0].target) {
+        const distance = -slides.current[0].target - restingX;
+        const force = distance * boundsAttraction;
+        applyForce(force);
+      } else if (-sliderX.current > slides.current[slides.current.length - 1].target) {
+        const distance = -slides.current[slides.current.length - 1].target - restingX;
+        const force = distance * boundsAttraction;
+        applyForce(force);
+      }
+    } else {
+      let distance = -slides.current[selectedIndex.current].target - sliderX.current;
+
+      const containerWidth = slider.current.clientWidth;
+
+      if (sliderWidth.current <= slider.current.clientWidth) {
+        distance = (containerWidth - sliderWidth.current) / 2 - sliderX.current;
+      }
+      const force = distance * attraction;
+      applyForce(force);
+    }
+    
+  }
+
   function previous() {
     isScrolling.current = false;
+    isFreeScrolling.current = false;
     select(selectedIndex.current - 1);
   };
 
   function next() {
     isScrolling.current = false;
+    isFreeScrolling.current = false;
     select(selectedIndex.current + 1);
   };
 
   function select(index: number) {
     if (!slider.current) return;
-    if (isWrapping.current === true) {
-      wrapSelect(index);
-    }
     const containedIndex = index < 0 ? 0 : index > slides.current.length - 1 ? slides.current.length - 1 : index;
-    const length = slides.current[slides.current.length - 1].target === sliderWidth.current || !isWrapping.current ? slides.current.length - 1 : slides.current.length;
-    index = ((index % length) + length) % length;
-    const finalIndex = isWrapping.current === true ? index : containedIndex;
-    selectedIndex.current = finalIndex;
-    slideStore.setSlideIndex(finalIndex);
-    firstCellInSlide.current = slides.current[finalIndex].cells[0]?.element;
+    selectedIndex.current = containedIndex;
+    slideStore.setSlideIndex(containedIndex);
+    firstCellInSlide.current = slides.current[containedIndex].cells[0]?.element;
     startAnimation();
   };
 
@@ -922,18 +655,12 @@ const Slider = ({
     if (!el) return;
 
     function handleResize() {
-      if (!el || showFullscreenSlider) return;
+      if (!el || !firstCellInSlide.current) return;
+
       const containerWidth = el.clientWidth;
 
-      if (!isWrapping.current) {
-        sliderX.current = 0;
-        selectedIndex.current = 0;
-
-        const currentPosition =
-          sliderWidth.current <= containerWidth
-            ? (containerWidth - sliderWidth.current) / 2
-            : sliderX.current;
-
+      if (sliderWidth.current <= containerWidth) {
+        const currentPosition = (containerWidth - sliderWidth.current) / 2;
         setTranslateX(currentPosition);
       }
     }
@@ -947,34 +674,6 @@ const Slider = ({
       observer.disconnect();
     };
   }, []);
-
-  function wrapSelect(index: number) {
-    if (!slider.current) return;
-
-    const length = slides.current[slides.current.length - 1].target === sliderWidth.current || !isWrapping.current ? slides.current.length - 1 : slides.current.length;
-    const slideableWidth = sliderWidth.current;
-    const selectedIdx = selectedIndex.current;
-
-    if (!isDragSelect.current) {
-      const wrapIndex = ((index % length) + length) % length;
-
-      const delta = Math.abs(wrapIndex - selectedIdx);
-      const backWrapDelta = Math.abs((wrapIndex + length) - selectedIdx);
-      const forwardWrapDelta = Math.abs((wrapIndex - length) - selectedIdx);
-
-      if (backWrapDelta < delta) {
-        index += length;
-      } else if (forwardWrapDelta < delta) {
-        index -= length;
-      }
-    }
-
-    if (index < 0) {
-      sliderX.current -= slideableWidth;
-    } else if (index >= length) {
-      sliderX.current += slideableWidth;
-    }
-  }
 
   interface SliderElement extends HTMLDivElement {
     style: CSSStyleDeclaration;
@@ -1004,7 +703,7 @@ const Slider = ({
 
     const sliderEl = slider.current;
     const containerWidth = sliderEl.clientWidth;
-    const contentWidth = sliderEl.scrollWidth;
+    const contentWidth   = sliderWidth.current;
 
     const canScrollHorizontally = sliderWidth.current > containerWidth;
     const isHorizontalScroll = Math.abs(e.deltaX) > Math.abs(e.deltaY);
@@ -1019,17 +718,10 @@ const Slider = ({
 
       let currentPosition = translateX;
 
-      if (isWrapping.current) {
-        currentPosition =
-          ((translateX % sliderWidth.current) + sliderWidth.current) %
-          sliderWidth.current;
-        currentPosition += -sliderWidth.current;
-      } else {
-        const maxTranslateX = 0;
-        const minTranslateX = containerWidth - contentWidth;
+      const maxTranslateX = 0;
+      const minTranslateX = containerWidth - contentWidth;
 
-        currentPosition = Math.max(minTranslateX, Math.min(maxTranslateX, translateX));
-      }
+      currentPosition = Math.max(minTranslateX, Math.min(maxTranslateX, translateX));
 
       setTranslateX(currentPosition);
 
@@ -1037,11 +729,9 @@ const Slider = ({
         Math.abs(currentPosition) / (sliderWidth.current / slides.current.length)
       );
       selectedIndex.current = index;
-      const wrapIndex =
-        ((index % slides.current.length) + slides.current.length) % slides.current.length;
-      slideStore.setSlideIndex(wrapIndex);
+      slideStore.setSlideIndex(index);
       sliderX.current = currentPosition;
-      firstCellInSlide.current = slides.current[wrapIndex].cells[0]?.element;
+      firstCellInSlide.current = slides.current[index].cells[0]?.element;
 
       return;
     }
@@ -1056,7 +746,7 @@ const Slider = ({
     if (sliderContainerRef) {
       sliderContainerRef.addEventListener("pointerdown", handlePointerStart);
       window.addEventListener("pointermove", handlePointerMove);
-      window.addEventListener("pointerup", (e) => handlePointerEnd(e));
+      window.addEventListener("pointerup", handlePointerEnd);
       sliderContainerRef.addEventListener("wheel", handleWheel, { passive: false });
 
       return () => {
@@ -1067,228 +757,6 @@ const Slider = ({
       };
     };
   }, []);
-
-  const shieldCleanupRef = useRef<null | (() => void)>(null);
-
-  const SHIELD_TIMEOUT = 400;
-
-  function addGestureShield() {
-    shieldCleanupRef.current?.();
-
-    const shield = document.createElement('div');
-    Object.assign(shield.style, {
-      position: 'fixed',
-      inset: '0',
-      zIndex: '10000',
-      background: 'transparent',
-      touchAction: 'none',
-      pointerEvents: 'auto',
-    });
-    document.body.appendChild(shield);
-
-    const remove = () => {
-      if (shield.parentNode) shield.remove();
-    };
-
-    const timer = window.setTimeout(() => {
-      remove();
-      shieldCleanupRef.current = null;
-    }, SHIELD_TIMEOUT);
-
-    const teardown = () => {
-      window.clearTimeout(timer);
-      remove();
-      shieldCleanupRef.current = null;
-    };
-
-    shieldCleanupRef.current = teardown;
-    return teardown;
-  }
-
-  function toggleFullscreen(
-    e: React.PointerEvent<HTMLDivElement>,
-    imgRef: React.RefObject<HTMLImageElement | null>,
-    index: number
-  ) {
-    const origImg   = imgRef.current;
-    const container = sliderContainer.current;
-    if (!origImg || !container) return;
-
-    // create + remember shield cleanup
-    shieldCleanupRef.current?.();
-    shieldCleanupRef.current = addGestureShield();
-
-    // 1) Measure the thumbnail
-    const imgRect = origImg.getBoundingClientRect();
-
-    // 2) Create nodes and attach refs
-    const overlay = document.createElement('div');
-    overlay.className = styles.fullscreenOverlay;
-    overlay.style.display = 'none';
-    overlayDivRef.current = overlay;
-
-    const dup = document.createElement('img');
-    dup.className = styles.duplicateImg;
-    dup.style.display = 'none';
-    dup.style.transformOrigin = '0 0';
-    duplicateImgRef.current = dup;
-
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = styles.closeBtn;
-    closeBtn.style.display = 'none';
-    closeButtonRef.current = closeBtn;
-    // “×” SVG
-    {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('width','35');
-      svg.setAttribute('height','35');
-      svg.setAttribute('viewBox','0 0 16 16');
-      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('fill','white');
-      path.setAttribute('stroke','#4f4f4f');
-      path.setAttribute('stroke-width','0.5');
-      path.setAttribute('d','M12.96 4.46l-1.42-1.42-3.54 3.55-3.54-3.55-1.42 1.42 3.55 3.54-3.55 3.54 1.42 1.42 3.54-3.55 3.54 3.55 1.42-1.42-3.55-3.54 3.55-3.54z');
-      svg.appendChild(path);
-      closeBtn.appendChild(svg);
-    }
-
-    const leftCh = document.createElement('div');
-    leftCh.className = styles.leftChevron;
-    leftCh.style.display = 'none';
-    leftChevronRef.current = leftCh;
-    // left arrow SVG
-    {
-      const svg  = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('width','50');
-      svg.setAttribute('height','50');
-      svg.setAttribute('viewBox','0 0 16 16');
-      svg.setAttribute('fill','white');
-      const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-      poly.setAttribute('stroke','#4f4f4f');
-      poly.setAttribute('stroke-width','0.5');
-      poly.setAttribute('points','4.586,3.414 9.172,8 4.586,12.586 6,14 12,8 6,2');
-      svg.appendChild(poly);
-      leftCh.appendChild(svg);
-    }
-
-    const rightCh = document.createElement('div');
-    rightCh.className = styles.rightChevron;
-    rightCh.style.display = 'none';
-    rightChevronRef.current = rightCh;
-    // right arrow SVG
-    {
-      const svg  = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('width','50');
-      svg.setAttribute('height','50');
-      svg.setAttribute('viewBox','0 0 16 16');
-      svg.setAttribute('fill','white');
-      const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-      poly.setAttribute('stroke','#4f4f4f');
-      poly.setAttribute('stroke-width','0.5');
-      poly.setAttribute('points','4.586,3.414 9.172,8 4.586,12.586 6,14 12,8 6,2');
-      svg.appendChild(poly);
-      rightCh.appendChild(svg);
-    }
-
-    const ctr = document.createElement('div');
-    ctr.className = styles.counter;
-    ctr.style.display = 'none';
-    ctr.textContent = `${index + 1} / ${imageCount}`;
-    counterRef.current = ctr;
-
-    // 3) Append to DOM in one shot
-    const frag = document.createDocumentFragment();
-    frag.append(overlay, dup, closeBtn, leftCh, rightCh, ctr);
-    document.body.appendChild(frag);
-
-    // 4) Prepare the “before” state
-    overlay.style.display = 'block';
-    overlay.classList.remove(styles.open);
-
-    dup.src = origImg.src;
-    dup.style.display = 'block';
-    dup.style.position = 'fixed';
-    dup.style.left = `${imgRect.left}px`;
-    dup.style.top = `${imgRect.top}px`;
-    dup.style.width = `${imgRect.width}px`;
-    dup.style.height = `${imgRect.height}px`;
-    dup.style.transition = 'none';
-
-    // force reflow then restore transition
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    dup.offsetWidth;
-    dup.style.transition = 'transform 0.3s cubic-bezier(.4,0,.22,1)';
-
-    closeBtn.style.display = 'block';
-    closeBtn.classList.remove(styles.open);
-
-    leftCh.style.display  = imageCount > 1 ? 'block' : 'none';
-    leftCh.classList.remove(styles.open);
-
-    rightCh.style.display = imageCount > 1 ? 'block' : 'none';
-    rightCh.classList.remove(styles.open);
-
-    ctr.style.display     = imageCount > 1 ? 'block' : 'none';
-    ctr.classList.remove(styles.open);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    overlay.offsetWidth;
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    dup.offsetWidth;
-
-    // 5) Compute transform to center-fit
-    const vw = document.documentElement.clientWidth;
-
-    const scaleX = vw / imgRect.width;
-    const scaleY = window.innerHeight / imgRect.height;
-    const s = Math.min(scaleX, scaleY);
-
-    const finalW = imgRect.width  * s;
-    const finalH = imgRect.height * s;
-
-    const targetLeft = (vw - finalW) / 2;
-    const targetTop  = (window.innerHeight - finalH) / 2;
-
-    const dx = targetLeft - imgRect.left;
-    const dy = targetTop  - imgRect.top;
-
-    // 6) Animate
-    requestAnimationFrame(() => {
-      dup.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
-      overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
-      overlay.classList.add(styles.open);
-      closeBtn.classList.add(styles.open);
-      if (imageCount > 1) {
-        leftCh.classList.add(styles.open);
-        rightCh.classList.add(styles.open);
-        ctr.classList.add(styles.open);
-      }
-    });
-
-    // 7) When the fly-out finishes, show the real slider
-    const onEnd = (ev: TransitionEvent) => {
-      if (ev.propertyName !== 'transform') return;
-      dup.removeEventListener('transitionend', onEnd);
-      setShowFullscreenSlider(true);
-    };
-    dup.addEventListener('transitionend', onEnd, { once: true });
-  }
-
-  useLayoutEffect(() => {
-    if (!showFullscreenSlider) return;
-    const dup = duplicateImgRef.current;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!dup) return;
-        dup.remove();
-        duplicateImgRef.current = null;
-        // also drop the shield if it’s still up
-        shieldCleanupRef.current?.();
-        shieldCleanupRef.current = null;
-      });
-    });
-  }, [showFullscreenSlider]);
 
   const Arrow = ({ direction, size = 32 }: { direction: "prev" | "next"; size?: number }) => (
     <svg
@@ -1366,12 +834,12 @@ const Slider = ({
   
 
   return (
-    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: '300px', backgroundColor: '#f8f9fa', zIndex: 1 }}>
+    <div ref={sliderContainer} className={styles.slider_container} style={{ position: 'relative', height: '400px', zIndex: 1 }}>
       {/* Shimmer covers everything until ready */}
       {!isReady && <div className={styles.shimmerOverlay} aria-hidden />}
       <div className={`${styles.fade_container} ${
         isReady && inView ? styles.fadeInActive : styles.fadeInStart
-      }`} style={{ position: 'relative', height: '300px' }}>
+      }`} style={{ position: 'relative',  height: '400px' }}>
         {/* Previous Button */}
         <div
           ref={prevButtonRef}
@@ -1438,10 +906,10 @@ const Slider = ({
         <div 
           ref={slider}
           style={{ 
-            width: '100%'
+            width: '100%',
           }}
         >
-          {clonedChildren}
+          {children}
         </div>
         {/* Pagination Dots */}
         <div
@@ -1472,6 +940,7 @@ const Slider = ({
                   const btn = dotRefs.current[index];
                   if (btn) createRipple(btn);
                   isScrolling.current = false;
+                  isFreeScrolling.current = false;
                   select(index);
                 }}
                 className={`${styles.pagination_dot} ${isActive ? styles.active : styles.inactive}`}

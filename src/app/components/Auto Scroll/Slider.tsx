@@ -254,53 +254,6 @@ const Slider = ({
   }, [children, clonedChildren]);
 
   useEffect(() => {
-    const el = slider.current;
-    if (!el) return;
-
-    function handleResize() {
-      if (!el || cells.current.length === 0) return;
-
-      const raw = Children
-        .toArray(children)
-        .filter(isValidElement) as ReactElement<any>[];
-      const n = raw.length - 1;
-      if (n < 1) return;
-
-      const allEls    = Array.from(el.children) as HTMLElement[];
-      const cCount    = clonesCountRef.current;
-      const originals = allEls.slice(cCount, allEls.length - cCount);
-
-      const cw    = el.clientWidth;
-      let sum = 0, count = 0;
-      for (const slot of originals) {
-        const w = slot.getBoundingClientRect().width;
-        if (sum + w <= cw) {
-          sum += w;
-          count++;
-        } else {
-          count++;
-          break;
-        }
-      }
-
-      const clamped = Math.max(2, Math.min(n, count));
-      setVisibleImages(clamped);
-    }
-
-    const observer = new ResizeObserver(() => {
-      handleResize();
-    });
-
-    observer.observe(el);
-    // initial run
-    handleResize();
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [children, clonedChildren]);
-
-  useEffect(() => {
     const GAP = 60;
     const container = slider.current;
     if (!container) return;

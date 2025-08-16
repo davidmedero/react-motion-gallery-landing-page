@@ -39,9 +39,7 @@ export default function Home() {
   return (
     <>
       <Hero />
-      <div className='sliderContainer'>
         <GroupedCellsSlider items={heroItems} />
-      </div>
       <Pricing />
       <Contact />
     </>

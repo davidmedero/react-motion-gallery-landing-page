@@ -21,8 +21,6 @@ class ScaleStore {
   };
 }
 
-// assign to a variable…
 const scaleStore = new ScaleStore();
 
-// …then export that named instance as the default
 export default scaleStore;

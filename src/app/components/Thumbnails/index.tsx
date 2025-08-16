@@ -267,7 +267,7 @@ export default function SliderWrapper({ items, urls }: Props) {
 
   // Wrapped fullscreen slides — now driven by wrappedItems but still
   // provide data-index etc. like before.
-  const wrappedFullscreenImages = wrappedItems.map((item, index) => {
+  const wrappedFullscreenItems = wrappedItems.map((item, index) => {
     const imageRef = imageRefs.current[index];
     const length = wrappedItems.length;
     const originalCount = length - 2;
@@ -346,7 +346,7 @@ export default function SliderWrapper({ items, urls }: Props) {
   });
 
   // Non-wrapped single fullscreen image
-  const oneFullscreenImage = normalizedItems.map((item, index) => {
+  const oneFullscreenItem = normalizedItems.map((item, index) => {
     const imageRef = imageRefs.current[index];
     const plyr = plyrProp[index];
     const isVideo = !!plyr;
@@ -1854,7 +1854,7 @@ export default function SliderWrapper({ items, urls }: Props) {
           leftChevronRef={leftChevronRef}
           rightChevronRef={rightChevronRef}
         >
-          {normalizedItems.length > 1 ? wrappedFullscreenImages : oneFullscreenImage}
+          {normalizedItems.length > 1 ? wrappedFullscreenItems : oneFullscreenItem}
         </FullscreenSlider>
       </FullscreenModal>
     </>

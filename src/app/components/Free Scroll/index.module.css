@@ -1,5 +1,5 @@
 .container {
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .image {
@@ -7,7 +7,6 @@
   position: absolute;
   left: 0;
   object-fit: contain;
-  cursor: zoom-in;
   height: 400px;
   user-select: none;
 }
@@ -17,18 +16,6 @@
   .videoShell {
     height: 50vw !important;
   }
-}
-
-.image:active {
-  cursor: grabbing;
-}
-
-.fullscreenImages:active {
-  cursor: grabbing !important;
-}
-
-.imgMargin:active {
-  cursor: grabbing !important;
 }
 
 .videoShell {
@@ -62,7 +49,7 @@
 .loadingShell {
   position: absolute;
   left: 0;
-  height: 400px;            /* match .image */
+  height: 156px;            /* match .image */
   aspect-ratio: 16 / 9;  /* e.g. 3 / 2 or 2 / 3 */
   display: inline-block;    /* shrink-to-fit */
   border-radius: 8px;

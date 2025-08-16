@@ -1,0 +1,106 @@
+.slider_container {
+  cursor: grab;
+}
+
+.slider_container:active {
+  cursor: grabbing;
+}
+
+.slider_container :global(img),
+.slider_container :global(video) {
+  max-width: none !important;
+}
+
+@media (max-width: 600px) {
+  .slider_container,
+  .fade_container {
+    height: 50vw !important;
+  }
+}
+
+.pagination_dot {
+  width: 14px;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 50%;
+  margin: 5px 5px 5px 5px;
+  cursor: pointer;
+  transition: 
+    transform 0.2s ease, 
+    background-color 0.3s ease, 
+    box-shadow 0.3s ease;
+}
+
+.pagination_dot:hover {
+  transform: scale(1.2);
+}
+
+.pagination_dot.active {
+  background-color: rgb(80, 163, 255);
+  box-shadow: 0 0 8px rgba(80, 163, 255, 0.6);
+}
+
+.pagination_dot.inactive {
+  background-color: lightgray;
+}
+
+/* Fade states */
+.fadeInStart {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.fadeInActive {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 420ms cubic-bezier(.2,.7,.2,1), transform 420ms cubic-bezier(.2,.7,.2,1);
+}
+
+/* Shimmer overlay that matches the slider box */
+.shimmerOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 37%, #f0f2f5 63%);
+  background-size: 400% 100%;
+  animation: rmgShimmer 1.2s infinite linear;
+  /* optional “strip” skeletons if you want multiple bars: */
+  /* You can add pseudo elements for bands if desired */
+}
+
+@keyframes rmgShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Accessibility: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .fadeInActive {
+    transition: none;
+  }
+  .shimmerOverlay {
+    animation: none;
+  }
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple 600ms linear;
+  background-color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.dragging,
+.dragging * {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}

@@ -9,6 +9,7 @@ import HeroSlider from "../components/Hero/index";
 import AutoScroll from "../components/Auto Scroll";
 import Autoplay from "../components/Autoplay";
 import MediaQuerySlider from "../components/Media Query";
+import FreeScroll from "../components/Free Scroll";
 
 export type MediaItem =
   | { kind: 'image'; src: string; alt?: string }
@@ -40,14 +41,14 @@ export default function Demos() {
     { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/standard/thumbnail-slider-image-8.jpg", alt: "Image 8" },
   ];
 
-  // const heroUrls: string[] = [
-  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-1.jpg',
-  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4',
-  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-2.jpg',
-  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-3.jpg',
-  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-4.jpg',
-  //   'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-5.jpg'
-  // ];
+  const heroUrls: string[] = [
+    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-1.jpg',
+    // 'https://react-motion-gallery.s3.us-east-1.amazonaws.com/videos/13927516_3840_2160_60fps.mp4',
+    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-2.jpg',
+    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-3.jpg',
+    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-4.jpg',
+    'https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-5.jpg'
+  ];
 
   const heroItems: MediaItem[] = [
     { kind: "image", src: "https://react-motion-gallery.s3.us-east-1.amazonaws.com/ds/rmg-ds-image-1.jpg", alt: "Hero image 1" },
@@ -158,6 +159,14 @@ export default function Demos() {
       </p>
       <div className={styles.sliderContainer}>
         <MediaQuerySlider items={items} />
+      </div>
+
+      <h2 className={styles.headers}>Free Scroll</h2>
+      <p className={styles.description}>
+        No snapping to cells after a drag gesture. Grouped cells, no wrapping and no fullscreen mode.
+      </p>
+      <div className={styles.sliderContainer}>
+        <FreeScroll urls={heroUrls} />
       </div>
       
     </div>
